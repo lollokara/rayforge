@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 from raygeo.geo import Geometry
-from raygeo.geo.shape.text import FontConfig
+from raygeo.geo.shape.text import FontConfig, text_to_geometry
 from sketcher.core.entities import TextBoxEntity
 from sketcher.core.entities.text_box import STYLE_DEFAULTS
 from sketcher.core.registry import EntityRegistry
@@ -462,3 +462,110 @@ def test_rewrite_offsets_copies_style(registry):
     copy_box = _make_text_box(registry, "Other")
     copy_box.rewrite_offsets_from(template, Mock())
     assert copy_box.get_style() == template.get_style()
+
+
+def _natural_box(registry, content="FL", **style):
+    """A text box whose frame equals the natural size of its content,
+    so map_to_frame is an identity scale."""
+    probe = TextBoxEntity(0, 0, 0, 0, content, FontConfig())
+    probe.set_style(style)
+    width, height = probe.get_natural_size()
+    p1 = registry.add_point(0, 0)
+    p2 = registry.add_point(width, 0)
+    p3 = registry.add_point(0, height)
+    box = registry.get_entity(
+        registry.add_text_box(p1, p2, p3, content, FontConfig())
+    )
+    box.set_style(style)
+    return box, width, height
+
+
+def _mean_x(geo):
+    xs = [x for ring in geo.to_polygons(0.01) for x, _ in ring]
+    return sum(xs) / len(xs)
+
+
+def test_default_style_matches_plain_layout(registry):
+    box, width, _ = _natural_box(registry)
+    plain = text_to_geometry("FL", font_config=FontConfig())
+    _, min_y, _, max_y = plain.rect()
+    expected = plain.map_to_frame(
+        (0.0, 0.0),
+        (width, 0.0),
+        (0.0, max_y - min_y),
+        anchor_x=0.0,
+        stable_src_width=FontConfig().get_text_width("FL"),
+        anchor_y=min_y,
+        stable_src_height=max_y - min_y,
+    )
+    assert box.to_geometry(registry).rect() == pytest.approx(expected.rect())
+
+
+def test_mirror_reflects_about_frame_centre(registry):
+    plain, width, _ = _natural_box(registry, "L")
+    mirrored, _, _ = _natural_box(registry, "L", mirrored=True)
+    r0 = plain.to_geometry(registry).rect()
+    r1 = mirrored.to_geometry(registry).rect()
+    assert r1[0] == pytest.approx(width - r0[2], abs=1e-6)
+    assert r1[2] == pytest.approx(width - r0[0], abs=1e-6)
+    assert (r1[1], r1[3]) == pytest.approx((r0[1], r0[3]))
+    plain_side = _mean_x(plain.to_geometry(registry)) - (r0[0] + r0[2]) / 2
+    mirror_side = _mean_x(mirrored.to_geometry(registry)) - (r1[0] + r1[2]) / 2
+    assert plain_side * mirror_side < 0
+
+
+def test_reverse_lays_out_characters_backwards(registry):
+    reversed_box, _, _ = _natural_box(registry, "AB", reverse=True)
+    plain_box, _, _ = _natural_box(registry, "BA")
+    assert reversed_box.to_geometry(registry).rect() == pytest.approx(
+        plain_box.to_geometry(registry).rect()
+    )
+
+
+def test_vertical_is_taller_than_wide(registry):
+    box, width, height = _natural_box(registry, "ABC", vertical=True)
+    assert height > width
+    min_x, min_y, max_x, max_y = box.to_geometry(registry).rect()
+    assert max_y - min_y > max_x - min_x
+
+
+def test_rotation_360_is_identity(registry):
+    plain, _, _ = _natural_box(registry)
+    turned, _, _ = _natural_box(registry, rotation=360.0)
+    assert turned.to_geometry(registry).rect() == pytest.approx(
+        plain.to_geometry(registry).rect(), abs=1e-6
+    )
+
+
+def test_rotation_180_is_point_reflection(registry):
+    plain, width, height = _natural_box(registry)
+    turned, _, _ = _natural_box(registry, rotation=180.0)
+    r0 = plain.to_geometry(registry).rect()
+    r1 = turned.to_geometry(registry).rect()
+    assert r1 == pytest.approx(
+        (width - r0[2], height - r0[3], width - r0[0], height - r0[1]),
+        abs=1e-6,
+    )
+
+
+def test_rotation_90_swaps_extents(registry):
+    plain, _, _ = _natural_box(registry)
+    turned, _, _ = _natural_box(registry, rotation=90.0)
+    r0 = plain.to_geometry(registry).rect()
+    r1 = turned.to_geometry(registry).rect()
+    assert r1[2] - r1[0] == pytest.approx(r0[3] - r0[1], abs=1e-6)
+    assert r1[3] - r1[1] == pytest.approx(r0[2] - r0[0], abs=1e-6)
+
+
+def test_blank_content_with_all_flags_does_not_raise(registry):
+    p1 = registry.add_point(0, 0)
+    p2 = registry.add_point(10, 0)
+    p3 = registry.add_point(0, 10)
+    box = registry.get_entity(
+        registry.add_text_box(p1, p2, p3, " ", FontConfig())
+    )
+    box.set_style(
+        {"mirrored": True, "reverse": True, "vertical": True, "rotation": 30.0}
+    )
+    assert isinstance(box.to_geometry(registry), Geometry)
+    assert box.get_natural_size()[0] >= 1.0

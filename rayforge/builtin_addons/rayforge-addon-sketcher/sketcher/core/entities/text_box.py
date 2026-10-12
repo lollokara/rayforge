@@ -4,7 +4,7 @@ import math
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from raygeo.geo import Geometry
+from raygeo.geo import Geometry, Matrix
 from raygeo.geo.shape.line import does_line_segment_intersect_rect
 from raygeo.geo.shape.polygon import is_point_inside_polygon
 from raygeo.geo.shape.text import FontConfig, text_to_geometry
@@ -208,14 +208,69 @@ class TextBoxEntity(Entity):
         if not text:
             return 10.0, self.font_config.size
 
-        geo = text_to_geometry(text, font_config=self.font_config)
-        _, geo_min_y, _, geo_max_y = geo.rect()
-        geo_height = geo_max_y - geo_min_y
+        _, width, _, height = self._natural_layout(text)
+        return max(width, 1.0), max(height, 1.0)
 
-        return (
-            max(self.font_config.get_text_width(text) or 0, 1.0),
-            max(geo_height, 1.0),
+    def _vertical_layout(
+        self, text: str
+    ) -> tuple[Geometry, float, float, float]:
+        """Stacks upright characters top to bottom, each centred on
+        the column."""
+        font = self.font_config
+        line_height = font.get_font_metrics()[2] or font.size
+        column = (
+            max((font.get_text_width(ch) for ch in text), default=0.0) or 1.0
         )
+        geo = Geometry()
+        for i, ch in enumerate(text):
+            glyph = text_to_geometry(ch, font_config=font)
+            dx = (column - font.get_text_width(ch)) / 2.0
+            glyph.transform(Matrix.translation(dx, -i * line_height))
+            geo.extend(glyph)
+        _, min_y, _, max_y = geo.rect()
+        return geo, column, min_y, max_y - min_y
+
+    def _natural_layout(
+        self, text: str
+    ) -> tuple[Geometry, float, float, float]:
+        """
+        Lays *text* out in natural space (mm, Y up, baseline origin)
+        with reverse, vertical and mirror applied, in that order.
+
+        Returns (geometry, width, min_y, height); width is the advance
+        width (or the column width for vertical text).
+        """
+        if self.reverse:
+            text = text[::-1]
+        if self.vertical:
+            geo, width, min_y, height = self._vertical_layout(text)
+        else:
+            geo = text_to_geometry(text, font_config=self.font_config)
+            _, min_y, _, max_y = geo.rect()
+            width = self.font_config.get_text_width(text) or 1.0
+            height = max_y - min_y
+        if self.mirrored:
+            geo.transform(Matrix.scale(-1.0, 1.0, center=(width / 2.0, 0.0)))
+        return geo, width, min_y, height
+
+    def _frame_glyphs(self, registry: "EntityRegistry", text: str) -> Geometry:
+        """Maps the natural layout into the frame, then rotates it
+        about the frame centre."""
+        origin, pw, ph = self._build_frame_for_content(registry, text)
+        geo, width, min_y, height = self._natural_layout(text)
+        geo = geo.map_to_frame(
+            origin,
+            pw,
+            ph,
+            anchor_x=0.0,
+            stable_src_width=width,
+            anchor_y=min_y,
+            stable_src_height=height,
+        )
+        if self.rotation:
+            centre = ((pw[0] + ph[0]) / 2.0, (pw[1] + ph[1]) / 2.0)
+            geo.transform(Matrix.rotation(self.rotation, center=centre))
+        return geo
 
     def get_fourth_corner_id(
         self, registry: "EntityRegistry"
@@ -414,19 +469,7 @@ class TextBoxEntity(Entity):
         text = (
             resolved_content if resolved_content is not None else self.content
         )
-        origin, pw, ph = self._build_frame_for_content(registry, text)
-        txt_geo = text_to_geometry(text, font_config=self.font_config)
-        _, geo_min_y, _, geo_max_y = txt_geo.rect()
-        advance_width = self.font_config.get_text_width(text) or 1.0
-        return txt_geo.map_to_frame(
-            origin,
-            pw,
-            ph,
-            anchor_x=0.0,
-            stable_src_width=advance_width,
-            anchor_y=geo_min_y,
-            stable_src_height=geo_max_y - geo_min_y,
-        )
+        return self._frame_glyphs(registry, text)
 
     def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()
