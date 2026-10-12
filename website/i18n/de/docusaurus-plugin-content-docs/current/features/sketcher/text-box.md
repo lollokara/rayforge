@@ -105,14 +105,18 @@ Das Anwenden einer Voreinstellung ist ein einzelner Rückgängig-Schritt.
 
 ## Seriennummern {#serial-numbers}
 
-**Seriennummer einfügen** fügt `{serial()}` in den Text ein. Es zeigt den aktuellen Wert eines
-Zählers an, und der Zähler rückt jedes Mal um einen Schritt weiter, wenn ein Auftrag an die Maschine
-gesendet oder als G-Code exportiert wird. Framing, Vorschauen und abgebrochene oder fehlgeschlagene
-Aufträge verbrauchen keine Nummer.
+**Seriennummer einfügen** fügt `{serial()}` in den Text ein, zeigt die nächste Nummer an und
+erklärt, dass der Zähler jedes Mal um eins weiterzählt, wenn ein Auftrag an die Maschine gesendet
+oder als G-Code exportiert wird. Framing, Vorschauen und abgebrochene oder fehlgeschlagene Aufträge
+verbrauchen keine Nummer.
 
 Zähler werden von allen Dokumenten gemeinsam genutzt und unter **Einstellungen → Seriennummern**
-verwaltet, wo jeder Zähler einen Startwert, Schritt, führende Nullen, Präfix und Suffix hat.
-Verwende `{serial("name")}`, um einen bestimmten Zähler anzuzeigen.
+verwaltet. Die Einstellungsseite führt durch drei Schritte: erstelle einen Zähler, binde ihn mit
+`{serial("name")}` oder „Seriennummer einfügen“ in den Schriftarteigenschaften ein und beachte, dass
+der Zähler einmal pro Auftrag statt für jedes Exemplar auf der Arbeitsfläche weiterrückt. Jede
+Zählerkarte zeigt `Use as {serial("name")}. Next number: ...` (oder `{serial()}` für den
+Standardzähler) zusammen mit Steuerelementen für Startwert, Schritt, führende Nullen, Präfix und
+Suffix an.
 
 ## Ein parametrischer Rahmen
 

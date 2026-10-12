@@ -105,13 +105,16 @@ desfazer.
 
 ## Números de série {#serial-numbers}
 
-**Inserir número de série** adiciona `{serial()}` ao texto. Ele mostra o valor atual de um contador,
-e o contador avança um passo a cada trabalho enviado para a máquina ou exportado como G-code. O
+**Inserir número de série** adiciona `{serial()}` ao texto, mostra o próximo número e explica que o
+contador avança um passo a cada trabalho enviado para a máquina ou exportado como G-code. O
 enquadramento, as visualizações e os trabalhos cancelados ou com falha não consomem um número.
 
 Os contadores são compartilhados por todos os documentos e são gerenciados em **Configurações →
-Números de série**, onde cada contador tem um valor inicial, passo, preenchimento com zeros, prefixo
-e sufixo. Use `{serial("name")}` para exibir um contador específico.
+Números de série**. A página de configurações orienta através de três etapas: crie um contador,
+vincule-o com `{serial("name")}` ou Inserir número de série nas Propriedades da fonte e observe que
+o contador avança uma vez por trabalho em vez de a cada cópia na tela. Cada cartão de contador exibe
+`Use as {serial("name")}. Next number: ...` (ou `{serial()}` para o contador padrão), juntamente com
+controles de valor inicial, passo, preenchimento com zeros, prefixo e sufixo.
 
 ## Um quadro paramétrico
 

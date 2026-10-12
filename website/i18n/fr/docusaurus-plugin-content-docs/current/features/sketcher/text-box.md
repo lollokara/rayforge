@@ -106,14 +106,17 @@ est une action d'annulation unique.
 
 ## Numéros de série {#serial-numbers}
 
-**Insérer un numéro de série** ajoute `{serial()}` au texte. Il affiche la valeur actuelle d'un
-compteur, et le compteur avance d'un pas chaque fois qu'un travail est envoyé à la machine ou
-exporté en G-code. Le cadrage, les aperçus et les travaux annulés ou échoués ne consomment pas de
-numéro.
+**Insérer un numéro de série** ajoute `{serial()}` au texte, affiche le numéro suivant et explique
+que le compteur avance d'un pas chaque fois qu'un travail est envoyé à la machine ou exporté en
+G-code. Le cadrage, les aperçus et les travaux annulés ou échoués ne consomment pas de numéro.
 
 Les compteurs sont partagés entre tous les documents et sont gérés dans **Paramètres → Numéros de
-série**, où chaque compteur possède une valeur de départ, un pas, un remplissage de zéros, un
-préfixe et un suffixe. Utilisez `{serial("name")}` pour afficher un compteur spécifique.
+série**. La page des paramètres vous guide en trois étapes : créez un compteur, référencez-le avec
+`{serial("name")}` ou Insérer un numéro de série dans Propriétés de la police, et notez que le
+compteur avance une fois par travail plutôt que pour chaque copie sur le canevas. Chaque carte de
+compteur affiche `Use as {serial("name")}. Next number: ...` (ou `{serial()}` pour le compteur par
+défaut), ainsi que des commandes pour la valeur de départ, le pas, le remplissage de zéros, le
+préfixe et le suffixe.
 
 ## Un cadre paramétrique
 

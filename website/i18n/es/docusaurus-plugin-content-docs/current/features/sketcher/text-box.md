@@ -106,13 +106,16 @@ para eliminar el preajuste seleccionado. Aplicar un preajuste es un único paso 
 
 ## Números de serie {#serial-numbers}
 
-**Insertar número de serie** añade `{serial()}` al texto. Muestra el valor actual de un contador, y
+**Insertar número de serie** añade `{serial()}` al texto, muestra el siguiente número y explica que
 el contador avanza un paso cada vez que se envía un trabajo a la máquina o se exporta como G-code.
 El encuadre, las vistas previas y los trabajos cancelados o fallidos no consumen un número.
 
 Los contadores se comparten entre todos los documentos y se gestionan en **Ajustes → Números de
-serie**, donde cada contador tiene un valor inicial, paso, relleno con ceros, prefijo y sufijo. Use
-`{serial("name")}` para mostrar un contador específico.
+serie**. La página de ajustes guía a través de tres pasos: cree un contador, vincúlelo con
+`{serial("name")}` o Insertar número de serie en Propiedades de fuente, y tenga en cuenta que el
+contador avanza una vez por trabajo en lugar de por cada copia en el lienzo. Cada tarjeta de
+contador muestra `Use as {serial("name")}. Next number: ...` (o `{serial()}` para el contador por
+omisión), junto con controles para el valor inicial, paso, relleno con ceros, prefijo y sufijo.
 
 ## Un marco paramétrico
 

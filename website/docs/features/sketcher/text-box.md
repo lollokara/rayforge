@@ -97,13 +97,16 @@ is a single undo step.
 
 ## Serial Numbers
 
-**Insert Serial Number** adds `{serial()}` to the text. It shows the current value of a counter, and
-the counter moves on by one step each time a job is sent to the machine or exported as G-code.
-Framing, previews and cancelled or failed jobs do not use up a number.
+**Insert Serial Number** adds `{serial()}` to the text, shows the next number, and explains that the
+counter advances once per job sent to the machine or exported as G-code. Framing, previews, and
+cancelled or failed jobs do not use up a number.
 
-Counters are shared by all documents and are managed under **Settings → Serial Numbers**, where each
-counter has a start value, step, zero padding, prefix and suffix. Use `{serial("name")}` to show a
-specific counter.
+Counters are shared by all documents and are managed under **Settings → Serial Numbers**. The
+settings page guides you through three steps: create a counter, reference it with `{serial("name")}`
+or Insert Serial Number in Font Properties, and note that the counter advances once per job rather
+than for each copy on the canvas. Each counter card displays
+`Use as {serial("name")}. Next number: ...` (or `{serial()}` for the default counter), along with
+controls for start value, step, zero padding, prefix, and suffix.
 
 ## A Parametric Frame
 
