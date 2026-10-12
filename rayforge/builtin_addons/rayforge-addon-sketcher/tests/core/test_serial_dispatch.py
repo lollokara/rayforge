@@ -1,6 +1,7 @@
 import pytest
 from raygeo.geo.shape.text import FontConfig
 from sketcher.core import Sketch
+from sketcher.core.entities.text_box import TextBoxEntity
 from sketcher.core.serial import load_counters
 from sketcher.core.serial_dispatch import (
     on_job_dispatched,
@@ -29,6 +30,7 @@ def _sketch_with_text(content, bottom=""):
             origin, width_pt, height_pt, content, FontConfig()
         )
     )
+    assert isinstance(box, TextBoxEntity)
     box.content_bottom = bottom
     sketch.solve()
     return sketch
