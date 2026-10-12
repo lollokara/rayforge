@@ -243,6 +243,17 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         self.bottom_text_row.connect("apply", self._on_style_changed)
         self.add(self.bottom_text_row)
 
+        self.insert_serial_row = Adw.ActionRow()
+        self.insert_serial_row.set_title(_("Insert Serial Number"))
+        self.insert_serial_row.set_subtitle(
+            _("Counters are managed in Settings")
+        )
+        self.insert_serial_row.set_activatable(True)
+        self.insert_serial_row.connect(
+            "activated", self._on_insert_serial_activated
+        )
+        self.add(self.insert_serial_row)
+
     def _add_switch_row(self, title: str, handler) -> Gtk.Switch:
         """Adds an action row with a switch and returns the switch."""
         row = Adw.ActionRow()
@@ -457,6 +468,20 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         finally:
             self._in_update = False
         self._apply_font_config()
+
+    def _on_insert_serial_activated(self, row, *args):
+        """Appends the default serial-number template to the text."""
+        entity = self._text_entity()
+        sketch_element = self.editor.sketch_element
+        if entity is None or not sketch_element:
+            return
+        cmd = ModifyTextPropertyCommand(
+            sketch=sketch_element.sketch,
+            text_entity_id=entity.id,
+            new_content=entity.content + "{serial()}",
+            new_font_config=entity.font_config,
+        )
+        self.editor.history_manager.execute(cmd)
 
     def _text_entity(self) -> TextBoxEntity | None:
         """The text entity currently shown, if it still exists."""

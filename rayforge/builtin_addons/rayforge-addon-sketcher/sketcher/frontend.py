@@ -57,6 +57,14 @@ def main_window_ready(main_window):
 
 
 @hookimpl
+def register_settings_pages(settings_page_registry):
+    """Contribute the serial-number counters page to Settings."""
+    from .ui_gtk.serial_settings import SerialSettingsPage
+
+    settings_page_registry.register(SerialSettingsPage, addon_name=ADDON_NAME)
+
+
+@hookimpl
 def on_unload():
     """Clean up sketch studio when addon is disabled."""
     global _doc_editor

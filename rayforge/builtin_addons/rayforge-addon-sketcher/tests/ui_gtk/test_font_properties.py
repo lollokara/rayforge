@@ -279,3 +279,16 @@ def test_blank_preset_name_is_not_saved(preset_data_dir, widget_with_box):
     widget.save_preset_row.set_text("   ")
     widget._on_save_preset_applied(widget.save_preset_row)
     assert text_presets.load_presets() == []
+
+
+@pytest.mark.ui
+def test_insert_serial_appends_template(widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+
+    widget._on_insert_serial_activated(widget.insert_serial_row)
+
+    assert entity.content == "Hello{serial()}"
+
+    widget.editor.history_manager.undo()
+    assert entity.content == "Hello"
