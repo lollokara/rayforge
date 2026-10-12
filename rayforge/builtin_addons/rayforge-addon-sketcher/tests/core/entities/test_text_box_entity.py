@@ -1,3 +1,4 @@
+import math
 from unittest.mock import Mock
 
 import pytest
@@ -606,3 +607,110 @@ def test_knockout_plate_rotates_with_text(registry):
     min_x, min_y, max_x, max_y = box.to_geometry(registry).rect()
     assert max_x - min_x == pytest.approx(height + 4.0, abs=1e-6)
     assert max_y - min_y == pytest.approx(width + 4.0, abs=1e-6)
+
+
+def _box_on_circle(registry, content="HHHH", radius=50.0, **style):
+    centre = registry.add_point(0.0, 0.0)
+    rim = registry.add_point(radius, 0.0)
+    circle_id = registry.add_circle(centre, rim)
+    box, _, _ = _natural_box(registry, content)
+    box.set_style({"path_entity_id": circle_id, **style})
+    return box, circle_id
+
+
+def _ring_radii(geo):
+    return [
+        math.hypot(x, y) for ring in geo.to_polygons(0.01) for x, y in ring
+    ]
+
+
+def test_text_on_circle_sits_on_top_outside(registry):
+    box, _ = _box_on_circle(registry)
+    geo = box.to_geometry(registry)
+    min_x, min_y, max_x, _ = geo.rect()
+    assert min(_ring_radii(geo)) >= 50.0 - 0.2
+    assert (min_x + max_x) / 2 == pytest.approx(0.0, abs=0.5)
+    assert min_y > 0.0
+
+
+def test_inside_text_on_circle_sits_at_bottom_inside(registry):
+    box, _ = _box_on_circle(registry, path_side="inside")
+    geo = box.to_geometry(registry)
+    assert max(_ring_radii(geo)) <= 50.0 + 0.2
+    assert geo.rect()[3] < 0.0
+
+
+def test_ring_layout_has_top_and_bottom_text(registry):
+    box, _ = _box_on_circle(registry, content_bottom="HHHH")
+    top_only, _ = _box_on_circle(registry)
+    geo = box.to_geometry(registry)
+    rings = len(geo.to_polygons(0.01))
+    assert rings == 2 * len(top_only.to_geometry(registry).to_polygons(0.01))
+    _, min_y, _, max_y = geo.rect()
+    assert max_y > 50.0
+    assert min_y < 0.0
+    assert min_y > -50.0 - 0.2
+
+
+def test_text_follows_line_from_its_first_point(registry):
+    p1 = registry.add_point(0.0, 100.0)
+    p2 = registry.add_point(200.0, 100.0)
+    line_id = registry.add_line(p1, p2)
+    box, _, _ = _natural_box(registry, "HI")
+    box.set_style({"path_entity_id": line_id, "path_align": "start"})
+    min_x, min_y, _, _ = box.to_geometry(registry).rect()
+    assert min_x < 5.0
+    assert min_y >= 100.0 - 0.01
+
+
+def test_text_follows_arc_from_its_start_point(registry):
+    centre = registry.add_point(0.0, 0.0)
+    start = registry.add_point(50.0, 0.0)
+    end = registry.add_point(0.0, 50.0)
+    arc_id = registry.add_arc(start, end, centre, cw=False)
+    box, _, _ = _natural_box(registry, "H")
+    box.set_style({"path_entity_id": arc_id, "path_align": "start"})
+    min_x, min_y, max_x, max_y = box.to_geometry(registry).rect()
+    centre_x, centre_y = (min_x + max_x) / 2, (min_y + max_y) / 2
+    assert math.hypot(centre_x - 50.0, centre_y) < math.hypot(
+        centre_x, centre_y - 50.0
+    )
+
+
+def test_missing_path_entity_falls_back_to_frame(registry):
+    plain, _, _ = _natural_box(registry, "HI")
+    bound, _, _ = _natural_box(registry, "HI")
+    bound.set_style({"path_entity_id": 987654})
+    assert bound.get_path_polyline(registry) is None
+    assert bound.to_geometry(registry).rect() == pytest.approx(
+        plain.to_geometry(registry).rect()
+    )
+
+
+def test_text_box_cannot_be_its_own_kind_of_path(registry):
+    other, _, _ = _natural_box(registry, "PATH")
+    bound, _, _ = _natural_box(registry, "HI")
+    bound.set_style({"path_entity_id": other.id})
+    assert bound.get_path_polyline(registry) is None
+
+
+def test_moving_the_path_changes_the_signature(registry):
+    box, circle_id = _box_on_circle(registry)
+    before = box.geometry_signature(registry)
+    circle = registry.get_entity(circle_id)
+    registry.get_point(circle.radius_pt_idx).x = 60.0
+    assert box.geometry_signature(registry) != before
+
+
+def test_path_points_are_not_text_box_points(registry):
+    box, circle_id = _box_on_circle(registry)
+    circle = registry.get_entity(circle_id)
+    assert circle.center_idx not in box.get_point_ids()
+
+
+def test_knockout_is_ignored_on_a_path(registry):
+    box, _ = _box_on_circle(registry, knockout=True)
+    assert box.get_plate_ring(registry) is None
+    assert box.to_fill_geometry(registry).rect() == pytest.approx(
+        box.to_geometry(registry).rect()
+    )

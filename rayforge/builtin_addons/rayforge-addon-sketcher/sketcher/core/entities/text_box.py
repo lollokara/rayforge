@@ -15,7 +15,11 @@ from raygeo.geo.types import Rect
 
 from rayforge.core.color import ColorRGBA
 
+from ..text_on_path import text_on_path
 from ..types import EntityID
+from .arc import Arc
+from .bezier import Bezier
+from .circle import Circle
 from .entity import Entity
 from .line import Line
 from .polygon import rings_to_geometry
@@ -45,6 +49,10 @@ _STYLE_CHOICES = {
     "path_side": ("outside", "inside"),
     "path_align": ("start", "center", "end"),
 }
+
+_PATH_ENTITY_TYPES = (Line, Arc, Circle, Bezier)
+_PATH_TOLERANCE = 0.02
+_CIRCLE_SEGMENTS = 96
 
 
 def _is_valid_style_value(key: str, value: Any) -> bool:
@@ -289,12 +297,93 @@ class TextBoxEntity(Entity):
             geo.transform(rotation)
         return geo
 
+    def _circle_polyline(
+        self, circle: Circle, registry: "EntityRegistry"
+    ) -> list[tuple[float, float]]:
+        """Clockwise from the bottom, so centred text sits on top and
+        reads left to right."""
+        centre = registry.get_point(circle.center_idx)
+        radius = circle.radius(registry)
+        return [
+            (
+                centre.x
+                + radius
+                * math.cos(-math.pi / 2 - 2 * math.pi * i / _CIRCLE_SEGMENTS),
+                centre.y
+                + radius
+                * math.sin(-math.pi / 2 - 2 * math.pi * i / _CIRCLE_SEGMENTS),
+            )
+            for i in range(_CIRCLE_SEGMENTS + 1)
+        ]
+
+    def get_path_polyline(
+        self, registry: "EntityRegistry"
+    ) -> list[tuple[float, float]] | None:
+        """The polyline the text follows, or None when the text box is
+        not bound to a usable path entity."""
+        if self.path_entity_id is None:
+            return None
+        entity = registry.get_entity(self.path_entity_id)
+        if not isinstance(entity, _PATH_ENTITY_TYPES):
+            return None
+        if isinstance(entity, Circle):
+            polyline = self._circle_polyline(entity, registry)
+        elif isinstance(entity, Line):
+            p1 = registry.get_point(entity.p1_idx)
+            p2 = registry.get_point(entity.p2_idx)
+            polyline = [(p1.x, p1.y), (p2.x, p2.y)]
+        else:
+            polyline = list(entity.to_polyline(registry, _PATH_TOLERANCE))
+        return polyline if len(polyline) >= 2 else None
+
+    def _path_glyphs(
+        self,
+        registry: "EntityRegistry",
+        text: str,
+        polyline: list[tuple[float, float]],
+    ) -> Geometry:
+        if self.reverse:
+            text = text[::-1]
+        geo = text_on_path(
+            text,
+            self.font_config,
+            polyline,
+            self.path_side,
+            self.path_align,
+            self.path_offset,
+        )
+        path_entity = (
+            registry.get_entity(self.path_entity_id)
+            if self.path_entity_id is not None
+            else None
+        )
+        if self.content_bottom and isinstance(path_entity, Circle):
+            geo.extend(
+                text_on_path(
+                    self.content_bottom,
+                    self.font_config,
+                    polyline,
+                    "inside",
+                    "center",
+                    -self.path_offset,
+                )
+            )
+        return geo
+
+    def _glyphs(self, registry: "EntityRegistry", text: str) -> Geometry:
+        """Glyph outlines on the bound path, or in the frame when the
+        text box follows no path."""
+        polyline = self.get_path_polyline(registry)
+        if polyline is None:
+            return self._frame_glyphs(registry, text)
+        return self._path_glyphs(registry, text, polyline)
+
     def get_plate_ring(
         self, registry: "EntityRegistry"
     ) -> list[tuple[float, float]] | None:
         """The knock-out plate: the frame grown by the margin and
         rotated with the text. None when knock-out is off."""
-        if not self.knockout:
+        if not self.knockout or self.get_path_polyline(registry) is not None:
             return None
         polygon = self.get_frame_polygon(registry)
         if polygon is None:
@@ -327,7 +416,7 @@ class TextBoxEntity(Entity):
         text = (
             resolved_content if resolved_content is not None else self.content
         )
-        glyphs = self._frame_glyphs(registry, text)
+        glyphs = self._glyphs(registry, text)
         ring = self.get_plate_ring(registry)
         if ring is None:
             return glyphs
@@ -383,6 +472,16 @@ class TextBoxEntity(Entity):
         """Extends the point signature with the content and font,
         which shape the rendered glyphs without moving the frame."""
         font = self.font_config
+        path_entity = (
+            registry.get_entity(self.path_entity_id)
+            if self.path_entity_id is not None
+            else None
+        )
+        path_signature = (
+            path_entity.geometry_signature(registry)
+            if isinstance(path_entity, _PATH_ENTITY_TYPES)
+            else ()
+        )
         return (
             super().geometry_signature(registry)
             + (
@@ -393,6 +492,7 @@ class TextBoxEntity(Entity):
                 font.italic,
             )
             + tuple(self.get_style().values())
+            + path_signature
         )
 
     def rewrite_offsets_from(
@@ -532,7 +632,7 @@ class TextBoxEntity(Entity):
         text = (
             resolved_content if resolved_content is not None else self.content
         )
-        glyphs = self._frame_glyphs(registry, text)
+        glyphs = self._glyphs(registry, text)
         ring = self.get_plate_ring(registry)
         if ring is None:
             return glyphs
