@@ -6,7 +6,10 @@ from typing import TYPE_CHECKING, Any
 
 from raygeo.geo import Geometry, Matrix
 from raygeo.geo.shape.line import does_line_segment_intersect_rect
-from raygeo.geo.shape.polygon import is_point_inside_polygon
+from raygeo.geo.shape.polygon import (
+    get_polygons_group_difference,
+    is_point_inside_polygon,
+)
 from raygeo.geo.shape.text import FontConfig, text_to_geometry
 from raygeo.geo.types import Rect
 
@@ -15,6 +18,7 @@ from rayforge.core.color import ColorRGBA
 from ..types import EntityID
 from .entity import Entity
 from .line import Line
+from .polygon import rings_to_geometry
 
 if TYPE_CHECKING:
     from ..constraints import Constraint
@@ -253,6 +257,19 @@ class TextBoxEntity(Entity):
             geo.transform(Matrix.scale(-1.0, 1.0, center=(width / 2.0, 0.0)))
         return geo, width, min_y, height
 
+    def _rotation_matrix(self, registry: "EntityRegistry") -> Matrix | None:
+        """The rotation about the frame centre, or None when the text
+        is not rotated."""
+        if not self.rotation:
+            return None
+        p_width = registry.get_point(self.width_id)
+        p_height = registry.get_point(self.height_id)
+        centre = (
+            (p_width.x + p_height.x) / 2.0,
+            (p_width.y + p_height.y) / 2.0,
+        )
+        return Matrix.rotation(self.rotation, center=centre)
+
     def _frame_glyphs(self, registry: "EntityRegistry", text: str) -> Geometry:
         """Maps the natural layout into the frame, then rotates it
         about the frame centre."""
@@ -267,10 +284,56 @@ class TextBoxEntity(Entity):
             anchor_y=min_y,
             stable_src_height=height,
         )
-        if self.rotation:
-            centre = ((pw[0] + ph[0]) / 2.0, (pw[1] + ph[1]) / 2.0)
-            geo.transform(Matrix.rotation(self.rotation, center=centre))
+        rotation = self._rotation_matrix(registry)
+        if rotation is not None:
+            geo.transform(rotation)
         return geo
+
+    def get_plate_ring(
+        self, registry: "EntityRegistry"
+    ) -> list[tuple[float, float]] | None:
+        """The knock-out plate: the frame grown by the margin and
+        rotated with the text. None when knock-out is off."""
+        if not self.knockout:
+            return None
+        polygon = self.get_frame_polygon(registry)
+        if polygon is None:
+            return None
+        (ox, oy), (wx, wy), _, (hx, hy) = polygon
+        ux, uy = wx - ox, wy - oy
+        vx, vy = hx - ox, hy - oy
+        u_len = math.hypot(ux, uy) or 1.0
+        v_len = math.hypot(vx, vy) or 1.0
+        margin = self.knockout_margin
+        ux, uy = ux / u_len * margin, uy / u_len * margin
+        vx, vy = vx / v_len * margin, vy / v_len * margin
+        signs = ((-1, -1), (1, -1), (1, 1), (-1, 1))
+        ring = [
+            (px + su * ux + sv * vx, py + su * uy + sv * vy)
+            for (px, py), (su, sv) in zip(polygon, signs)
+        ]
+        rotation = self._rotation_matrix(registry)
+        if rotation is not None:
+            ring = [rotation.transform_point(point) for point in ring]
+        return ring
+
+    def to_fill_geometry(
+        self,
+        registry: "EntityRegistry",
+        resolved_content: str | None = None,
+    ) -> Geometry:
+        """The area to fill: the glyphs, or for knock-out the plate
+        with the glyphs cut out."""
+        text = (
+            resolved_content if resolved_content is not None else self.content
+        )
+        glyphs = self._frame_glyphs(registry, text)
+        ring = self.get_plate_ring(registry)
+        if ring is None:
+            return glyphs
+        return rings_to_geometry(
+            get_polygons_group_difference([ring], glyphs.to_polygons(0.02))
+        )
 
     def get_fourth_corner_id(
         self, registry: "EntityRegistry"
@@ -469,7 +532,13 @@ class TextBoxEntity(Entity):
         text = (
             resolved_content if resolved_content is not None else self.content
         )
-        return self._frame_glyphs(registry, text)
+        glyphs = self._frame_glyphs(registry, text)
+        ring = self.get_plate_ring(registry)
+        if ring is None:
+            return glyphs
+        plate = rings_to_geometry([ring])
+        plate.extend(glyphs)
+        return plate
 
     def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()

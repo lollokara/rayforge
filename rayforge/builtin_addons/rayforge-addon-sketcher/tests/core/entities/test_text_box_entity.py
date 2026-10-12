@@ -569,3 +569,40 @@ def test_blank_content_with_all_flags_does_not_raise(registry):
     )
     assert isinstance(box.to_geometry(registry), Geometry)
     assert box.get_natural_size()[0] >= 1.0
+
+
+def test_knockout_stroke_contains_plate_ring(registry):
+    box, width, height = _natural_box(
+        registry, "HI", knockout=True, knockout_margin=2.0
+    )
+    assert box.to_geometry(registry).rect() == pytest.approx(
+        (-2.0, -2.0, width + 2.0, height + 2.0), abs=1e-6
+    )
+
+
+def test_knockout_fill_is_plate_minus_glyphs(registry):
+    plain, width, height = _natural_box(registry, "HI")
+    box, _, _ = _natural_box(
+        registry, "HI", knockout=True, knockout_margin=2.0
+    )
+    glyph_area = abs(plain.to_fill_geometry(registry).area())
+    plate_area = (width + 4.0) * (height + 4.0)
+    assert abs(box.to_fill_geometry(registry).area()) == pytest.approx(
+        plate_area - glyph_area, rel=0.02
+    )
+
+
+def test_fill_geometry_without_knockout_equals_stroke(registry):
+    box, _, _ = _natural_box(registry, "HI")
+    assert box.to_fill_geometry(registry).rect() == pytest.approx(
+        box.to_geometry(registry).rect()
+    )
+
+
+def test_knockout_plate_rotates_with_text(registry):
+    box, width, height = _natural_box(
+        registry, "HI", knockout=True, knockout_margin=2.0, rotation=90.0
+    )
+    min_x, min_y, max_x, max_y = box.to_geometry(registry).rect()
+    assert max_x - min_x == pytest.approx(height + 4.0, abs=1e-6)
+    assert max_y - min_y == pytest.approx(width + 4.0, abs=1e-6)

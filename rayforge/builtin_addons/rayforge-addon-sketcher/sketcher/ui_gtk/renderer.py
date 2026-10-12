@@ -306,7 +306,9 @@ class SketchRenderer:
                 and isinstance(entity, TextBoxEntity)
                 and entity.fill_color is not None
             ):
-                text_geo = entity.to_geometry(self.element.sketch.registry)
+                text_geo = entity.to_fill_geometry(
+                    self.element.sketch.registry
+                )
                 if text_geo:
                     ctx.new_path()
                     geometry_to_cairo(text_geo, ctx)
