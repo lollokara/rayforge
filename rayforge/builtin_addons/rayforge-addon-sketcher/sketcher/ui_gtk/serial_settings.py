@@ -10,6 +10,7 @@ from rayforge.ui_gtk.shared.pref_rows import SpinRow
 from rayforge.ui_gtk.shared.preferences_page import TrackedPreferencesPage
 
 from ..core.serial import (
+    DEFAULT_NAME,
     SerialCounter,
     load_counters,
     load_counters_for_update,
@@ -43,9 +44,15 @@ class SerialSettingsPage(TrackedPreferencesPage):
         add_group.set_title(_("Serial Numbers"))
         add_group.set_description(
             _(
-                "Counters advance once for every job sent to the machine "
-                "or exported. Use them in a text box with "
-                '{serial("name")}.'
+                "Serial numbers count your engraved parts.\n"
+                "1. Create a counter below.\n"
+                '2. Type {serial("name")} into a text box, or use '
+                "Insert Serial Number in Font Properties.\n"
+                "3. The counter goes up by one each time a job is sent to "
+                "the machine or exported, not for every copy on the "
+                "canvas.\n"
+                "{serial()} without a name uses the counter called "
+                '"default", which is created after the first job.'
             )
         )
         self.add_row = Adw.EntryRow()
@@ -68,6 +75,7 @@ class SerialSettingsPage(TrackedPreferencesPage):
     def _add_group(self, counter: SerialCounter) -> None:
         group = Adw.PreferencesGroup()
         group.set_title(counter.name)
+        group.set_description(self._describe(counter))
         for field, title, lower in _INT_ROWS:
             row = SpinRow(
                 title,
@@ -96,6 +104,23 @@ class SerialSettingsPage(TrackedPreferencesPage):
         )
         self.add(group)
         self.counter_groups[counter.name] = group
+
+    @staticmethod
+    def _describe(counter: SerialCounter) -> str:
+        """How to use a counter and what it engraves next."""
+        call = (
+            "{serial()}"
+            if counter.name == DEFAULT_NAME
+            else '{serial("' + counter.name + '")}'
+        )
+        return _("Use as {call}. Next number: {number}").format(
+            call=call, number=counter.format()
+        )
+
+    def _refresh_description(self, counter: SerialCounter) -> None:
+        group = self.counter_groups.get(counter.name)
+        if group is not None:
+            group.set_description(self._describe(counter))
 
     def _button_row(self, title: str, action, counter) -> Adw.ActionRow:
         row = Adw.ActionRow()
@@ -132,6 +157,7 @@ class SerialSettingsPage(TrackedPreferencesPage):
         for field, value in changes.items():
             setattr(counter, field, value)
         save_counters(counters)
+        self._refresh_description(counter)
         refresh_current_doc()
 
     def reset_counter(self, name: str) -> None:

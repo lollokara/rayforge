@@ -11,6 +11,7 @@ if sys.platform.startswith("linux"):
             allow_module_level=True,
         )
 
+from gi.repository import Adw
 from sketcher.core.serial import SerialCounter, load_counters, save_counters
 from sketcher.ui_gtk.serial_settings import SerialSettingsPage
 
@@ -108,3 +109,35 @@ def test_edits_refresh_the_open_document(mocker):
     page.add_counter("b")
 
     assert refresh.call_count == 4
+
+
+@pytest.mark.ui
+def test_page_description_explains_the_workflow():
+    page = SerialSettingsPage()
+    group = page.add_row.get_ancestor(Adw.PreferencesGroup)
+    assert group is not None
+    description = group.get_description() or ""
+    assert '{serial("name")}' in description
+    assert "Insert Serial Number" in description
+
+
+@pytest.mark.ui
+def test_counter_group_shows_usage_and_next_number():
+    page = SerialSettingsPage()
+    page.add_counter("batch")
+    page.update_counter("batch", value=7, padding=3, prefix="A-")
+
+    description = page.counter_groups["batch"].get_description() or ""
+
+    assert '{serial("batch")}' in description
+    assert "A-007" in description
+
+
+@pytest.mark.ui
+def test_default_counter_is_described_without_a_name():
+    page = SerialSettingsPage()
+    page.add_counter("default")
+
+    description = page.counter_groups["default"].get_description() or ""
+
+    assert "{serial()}" in description

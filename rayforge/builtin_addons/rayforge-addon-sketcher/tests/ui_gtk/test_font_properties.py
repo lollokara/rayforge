@@ -292,3 +292,36 @@ def test_insert_serial_appends_template(widget_with_box):
 
     widget.editor.history_manager.undo()
     assert entity.content == "Hello"
+
+
+@pytest.mark.ui
+def test_insert_serial_subtitle_explains_then_shows_next_number(
+    widget_with_box, tmp_path, monkeypatch
+):
+    monkeypatch.setattr("rayforge.config.ADDON_DATA_DIR", tmp_path)
+    widget, _sketch, _tb_id = widget_with_box
+    hint = widget.insert_serial_row.get_subtitle() or ""
+
+    assert "{serial()}" in hint
+    assert "Settings" in hint
+
+    widget._on_insert_serial_activated(widget.insert_serial_row)
+
+    subtitle = widget.insert_serial_row.get_subtitle() or ""
+    assert subtitle.startswith("Next number: 1.")
+
+
+@pytest.mark.ui
+def test_insert_serial_subtitle_lists_named_counters(
+    widget_with_box, tmp_path, monkeypatch
+):
+    monkeypatch.setattr("rayforge.config.ADDON_DATA_DIR", tmp_path)
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+    entity.content = 'A{serial("batch")} B{serial("lot")}'
+
+    widget.set_text_entity(tb_id)
+
+    subtitle = widget.insert_serial_row.get_subtitle() or ""
+    assert "batch: 1" in subtitle
+    assert "lot: 1" in subtitle

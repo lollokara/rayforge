@@ -13,7 +13,7 @@ from rayforge.ui_gtk.shared.pref_rows import (
     SpinRow,
 )
 
-from ..core import fonts, text_presets
+from ..core import fonts, serial, text_presets
 from ..core.commands.text_property import (
     ModifyTextPropertyCommand,
 )
@@ -25,6 +25,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_SERIAL_HINT = _(
+    "Adds {serial()} to the text. The number goes up by one each time a "
+    "job is sent or exported. Counters are managed in "
+    "Settings > Serial Numbers."
+)
 _PATH_SIDES = ("outside", "inside")
 _PATH_ALIGNS = ("start", "center", "end")
 
@@ -245,9 +250,7 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
 
         self.insert_serial_row = Adw.ActionRow()
         self.insert_serial_row.set_title(_("Insert Serial Number"))
-        self.insert_serial_row.set_subtitle(
-            _("Counters are managed in Settings")
-        )
+        self.insert_serial_row.set_subtitle(_SERIAL_HINT)
         self.insert_serial_row.set_activatable(True)
         self.insert_serial_row.connect(
             "activated", self._on_insert_serial_activated
@@ -431,6 +434,7 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             self.path_offset_row.set_value_in_base_units(entity.path_offset)
             self.bottom_text_row.set_text(entity.content_bottom)
             self._update_follow_path_subtitle()
+            self._update_serial_subtitle(entity)
         finally:
             self._in_update = False
 
@@ -482,6 +486,31 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             new_font_config=entity.font_config,
         )
         self.editor.history_manager.execute(cmd)
+        updated = self._text_entity()
+        if updated is not None:
+            self._update_serial_subtitle(updated)
+
+    def _update_serial_subtitle(self, entity: TextBoxEntity):
+        """Explains serial numbers and shows what is engraved next."""
+        names = serial.find_serial_names(
+            f"{entity.content}\n{entity.content_bottom}"
+        )
+        if not names:
+            self.insert_serial_row.set_subtitle(_SERIAL_HINT)
+            return
+        if names == {serial.DEFAULT_NAME}:
+            numbers = serial.peek()
+        else:
+            numbers = ", ".join(
+                f"{name}: {serial.peek(name)}" for name in sorted(names)
+            )
+        self.insert_serial_row.set_subtitle(
+            _(
+                "Next number: {numbers}. It goes up by one each time a "
+                "job is sent or exported. Counters are managed in "
+                "Settings > Serial Numbers."
+            ).format(numbers=numbers)
+        )
 
     def _text_entity(self) -> TextBoxEntity | None:
         """The text entity currently shown, if it still exists."""
