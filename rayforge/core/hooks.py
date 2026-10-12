@@ -4,12 +4,20 @@ hookspec = pluggy.HookspecMarker("rayforge")
 hookimpl = pluggy.HookimplMarker("rayforge")
 
 MINIMUM_API_VERSION = 16
-PLUGIN_API_VERSION = 21
+PLUGIN_API_VERSION = 22
 
 
 """
 API Changelog
 =============
+
+Version 22
+----------
+Added the ``job_dispatched(doc, kind)`` hook. It is called on the main
+thread after a job was handed off successfully: ``kind`` is ``"send"``
+when the machine driver accepted and ran a job, and ``"export"`` when
+G-code was written to a file. Framing, pointer dry runs, failed or
+empty jobs, sanity checks and previews do not call it.
 
 Version 21
 ----------
@@ -448,4 +456,22 @@ class RayforgeSpecs:
 
         Args:
             main_window: The MainWindow instance.
+        """
+
+    @hookspec
+    def job_dispatched(self, doc, kind):
+        """
+        Called after a job was handed off successfully.
+
+        Fires once per job on the main thread: after the machine driver
+        ran a sent job, or after exported G-code was written to disk.
+        Framing, pointer dry runs, failed or empty jobs, sanity checks
+        and previews do not fire it. Implementations must not raise.
+
+        .. versionadded:: 22
+
+        Args:
+            doc: The Doc the job was generated from.
+            kind: ``"send"`` for a job sent to the machine, ``"export"``
+              for a G-code export.
         """

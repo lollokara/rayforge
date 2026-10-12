@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Awaitable, Callable, Coroutine
+from functools import partial
 from gettext import gettext as _
 from typing import TYPE_CHECKING
 
@@ -81,6 +82,12 @@ class MachineCmd:
         logger.debug(f"JobMonitor progress: {metrics}")
         if self._on_progress_callback:
             self._scheduler(self._on_progress_callback, metrics)
+
+    def _notify_job_dispatched(self, kind: str) -> None:
+        """Tells addons that a job was handed off successfully."""
+        get_context().plugin_mgr.hook.job_dispatched(
+            doc=self._editor.doc, kind=kind
+        )
 
     async def _execute_monitored_job(
         self,
@@ -309,6 +316,7 @@ class MachineCmd:
         artifact: JobArtifact,
         machine: Machine,
         on_progress: Callable[[dict], None] | None,
+        notify_dispatch: bool = True,
     ):
         """The specific machine action for a send job.
 
@@ -326,6 +334,8 @@ class MachineCmd:
             on_progress=on_progress,
             encoded=artifact.encoded_output,
         )
+        if notify_dispatch and not artifact.ops.is_empty():
+            self._scheduler(self._notify_job_dispatched, "send")
 
     async def _start_job(
         self,
@@ -438,7 +448,12 @@ class MachineCmd:
         try:
             await self._start_job(
                 machine,
-                final_job_action=self._run_send_action,
+                final_job_action=partial(
+                    self._run_send_action,
+                    notify_dispatch=not (
+                        pointer_dry_run and machine.has_pointer_offset()
+                    ),
+                ),
                 on_progress=on_progress,
                 pointer_dry_run=pointer_dry_run,
             )

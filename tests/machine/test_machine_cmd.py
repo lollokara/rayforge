@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 import pytest_asyncio
@@ -10,6 +10,7 @@ from raygeo.ops.state import PowerMode
 from raygeo.ops.types import CommandType
 
 from rayforge.core.config import ConfigManager
+from rayforge.core.hooks import hookimpl
 from rayforge.machine.cmd import (
     JobAlreadyRunningError,
     MachineCmd,
@@ -781,3 +782,135 @@ class TestDriverFrameDefault:
         encoded = run_spy.call_args.args[0]
         assert "F6000" in encoded.text
         assert "M3" in encoded.text
+
+
+class _DispatchRecorder:
+    def __init__(self):
+        self.calls = []
+
+    @hookimpl
+    def job_dispatched(self, doc, kind):
+        self.calls.append((doc, kind))
+
+
+class TestMachineCmdJobDispatched:
+    """The job_dispatched hook fires only for real, successful sends."""
+
+    @pytest.fixture
+    def dispatch_spy(self, machine_cmd, mocker):
+        return mocker.patch.object(machine_cmd, "_notify_job_dispatched")
+
+    @pytest.fixture
+    def fake_pipeline(self, machine_cmd, job_artifact, mocker):
+        pipeline = machine_cmd._editor.pipeline
+        handle = pipeline.artifact_store.put(job_artifact, creator_tag="test")
+
+        async def fake_generate():
+            return handle
+
+        mocker.patch.object(
+            pipeline, "generate_job_artifact_async", side_effect=fake_generate
+        )
+        mocker.patch.object(pipeline, "invalidate_job_output")
+        return pipeline
+
+    @pytest.mark.asyncio
+    async def test_send_dispatches_once(
+        self, machine_cmd, doc_editor, machine, job_artifact, dispatch_spy
+    ):
+        await machine_cmd._run_send_action(job_artifact, machine, None)
+        await asyncio.sleep(0)
+        await doc_editor.wait_until_settled()
+
+        dispatch_spy.assert_called_once_with("send")
+
+    @pytest.mark.asyncio
+    async def test_failed_send_does_not_dispatch(
+        self, machine_cmd, machine, job_artifact, dispatch_spy, mocker
+    ):
+        mocker.patch.object(
+            machine.driver, "run", side_effect=RuntimeError("boom")
+        )
+
+        with pytest.raises(RuntimeError):
+            await machine_cmd._run_send_action(job_artifact, machine, None)
+        await asyncio.sleep(0)
+
+        dispatch_spy.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_empty_job_does_not_dispatch(
+        self, machine_cmd, machine, dispatch_spy
+    ):
+        empty = JobArtifact(
+            ops=Ops(), distance=0.0, generation_id=1, encoded_output=None
+        )
+
+        await machine_cmd._run_send_action(empty, machine, None)
+        await asyncio.sleep(0)
+
+        dispatch_spy.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_frame_does_not_dispatch(
+        self,
+        machine_cmd,
+        doc_editor,
+        machine,
+        job_artifact,
+        dispatch_spy,
+        mocker,
+    ):
+        mocker.patch.object(machine.driver, "frame", new=AsyncMock())
+
+        await machine_cmd._run_frame_action(job_artifact, machine, None)
+        await asyncio.sleep(0)
+        await doc_editor.wait_until_settled()
+
+        dispatch_spy.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_pointer_dry_run_does_not_dispatch(
+        self, machine_cmd, doc_editor, machine, fake_pipeline, dispatch_spy
+    ):
+        head = machine.get_default_laser_head()
+        head.set_pointer_offset(10.0, 20.0)
+        head.set_pointer_offset_enabled(True)
+
+        await machine_cmd.send_job(machine, pointer_dry_run=True)
+        await asyncio.sleep(0)
+        await doc_editor.wait_until_settled()
+
+        dispatch_spy.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_dry_run_without_pointer_offset_dispatches(
+        self, machine_cmd, doc_editor, machine, fake_pipeline, dispatch_spy
+    ):
+        await machine_cmd.send_job(machine, pointer_dry_run=True)
+        await asyncio.sleep(0)
+        await doc_editor.wait_until_settled()
+
+        dispatch_spy.assert_called_once_with("send")
+
+    @pytest.mark.asyncio
+    async def test_regular_send_job_dispatches(
+        self, machine_cmd, doc_editor, machine, fake_pipeline, dispatch_spy
+    ):
+        await machine_cmd.send_job(machine)
+        await asyncio.sleep(0)
+        await doc_editor.wait_until_settled()
+
+        dispatch_spy.assert_called_once_with("send")
+
+    def test_notify_calls_the_plugin_hook(
+        self, machine_cmd, doc_editor, context_initializer
+    ):
+        recorder = _DispatchRecorder()
+        context_initializer.plugin_mgr.register(recorder)
+        try:
+            machine_cmd._notify_job_dispatched("send")
+        finally:
+            context_initializer.plugin_mgr.unregister(recorder)
+
+        assert recorder.calls == [(doc_editor.doc, "send")]
