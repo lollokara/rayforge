@@ -1079,3 +1079,48 @@ msgstr "Скинути до початкового"
 #: sketcher/ui_gtk/serial_settings.py
 msgid "Delete Counter"
 msgstr "Видалити лічильник"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Додає {serial()} до тексту. Число збільшується на одиницю щоразу, коли завдання "
+"надсилається або експортується. Лічильники налаштовуються в "
+"Параметри > Серійні номери."
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Наступне число: {numbers}. Воно збільшується на одиницю щоразу, коли завдання "
+"надсилається або експортується. Лічильники налаштовуються в "
+"Параметри > Серійні номери."
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Створіть лічильник нижче.\n"
+"2. Введіть {serial(\"name\")} у текстове поле або використайте "
+"Вставити серійний номер у Властивості шрифту.\n"
+"3. Лічильник збільшується на одиницю щоразу, коли завдання надсилається на "
+"верстат або експортується, а не для кожної копії на полотні.\n"
+"{serial()} без назви використовує лічильник з назвою \"default\", який "
+"створюється після першого завдання."
+msgstr ""
+"Серійні номери рахують ваші вигравірувані деталі.\n"
+"1. Створіть лічильник нижче.\n"
+"2. Введіть {serial(\"name\")} у текстове поле або використайте "
+"Вставити серійний номер у Властивості шрифту.\n"
+"3. Лічильник збільшується на одиницю щоразу, коли завдання надсилається на "
+"верстат або експортується, а не для кожної копії на полотні.\n"
+"{serial()} без назви використовує лічильник з назвою \"default\", який "
+"створюється після першого завдання."
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "Використовувати як {call}. Наступне число: {number}"

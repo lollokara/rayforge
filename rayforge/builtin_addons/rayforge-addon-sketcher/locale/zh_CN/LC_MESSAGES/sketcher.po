@@ -1074,3 +1074,40 @@ msgstr "重置为起始值"
 #: sketcher/ui_gtk/serial_settings.py
 msgid "Delete Counter"
 msgstr "删除计数器"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"向文本添加 {serial()}。每发送或导出一个作业，编号递增一。计数器在"
+"设置 > 序列号中管理。"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"下一个编号：{numbers}。每发送或导出一个作业，编号递增一。计数器在"
+"设置 > 序列号中管理。"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. 在下方创建计数器。\n"
+"2. 在文本框中输入 {serial(\"name\")}，或使用字体属性中的插入序列号。\n"
+"3. 每向机器发送或导出一个作业，计数器递增一，而不是为画布上的每个副本递增。\n"
+"不带名称的 {serial()} 使用名为 \"default\" 的计数器，该计数器在第一个作业后创建。"
+msgstr ""
+"序列号用于计算您雕刻的零件。\n"
+"1. 在下方创建计数器。\n"
+"2. 在文本框中输入 {serial(\"name\")}，或使用字体属性中的插入序列号。\n"
+"3. 每向机器发送或导出一个作业，计数器递增一，而不是为画布上的每个副本递增。\n"
+"不带名称的 {serial()} 使用名为 \"default\" 的计数器，该计数器在第一个作业后创建。"
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "用作 {call}。下一个编号：{number}"

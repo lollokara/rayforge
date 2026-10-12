@@ -1084,3 +1084,47 @@ msgstr "Réinitialiser au début"
 #: sketcher/ui_gtk/serial_settings.py
 msgid "Delete Counter"
 msgstr "Supprimer le compteur"
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Ajoute {serial()} au texte. Le numéro augmente d'un pas à chaque envoi ou "
+"exportation d'un travail. Les compteurs sont gérés dans "
+"Paramètres > Numéros de série."
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Numéro suivant : {numbers}. Il augmente d'un pas à chaque envoi ou exportation "
+"d'un travail. Les compteurs sont gérés dans "
+"Paramètres > Numéros de série."
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Créez un compteur ci-dessous.\n"
+"2. Saisissez {serial(\"name\")} dans une zone de texte ou utilisez "
+"Insérer un numéro de série dans Propriétés de la police.\n"
+"3. Le compteur augmente d'un pas à chaque fois qu'un travail est envoyé à la "
+"machine ou exporté, et non pour chaque copie sur le canevas.\n"
+"{serial()} sans nom utilise le compteur nommé \"default\", qui est créé "
+"après le premier travail."
+msgstr ""
+"Les numéros de série comptent vos pièces gravées.\n"
+"1. Créez un compteur ci-dessous.\n"
+"2. Saisissez {serial(\"name\")} dans une zone de texte ou utilisez "
+"Insérer un numéro de série dans Propriétés de la police.\n"
+"3. Le compteur augmente d'un pas à chaque fois qu'un travail est envoyé à la "
+"machine ou exporté, et non pour chaque copie sur le canevas.\n"
+"{serial()} sans nom utilise le compteur nommé \"default\", qui est créé "
+"après le premier travail."
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "Utiliser comme {call}. Numéro suivant : {number}"

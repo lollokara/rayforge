@@ -1074,3 +1074,33 @@ msgstr ""
 #: sketcher/ui_gtk/serial_settings.py
 msgid "Delete Counter"
 msgstr ""
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Create a counter below.\n"
+"2. Type {serial(\"name\")} into a text box, or use Insert Serial Number in "
+"Font Properties.\n"
+"3. The counter goes up by one each time a job is sent to the machine or "
+"exported, not for every copy on the canvas.\n"
+"{serial()} without a name uses the counter called \"default\", which is "
+"created after the first job."
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr ""

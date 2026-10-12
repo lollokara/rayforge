@@ -1079,3 +1079,47 @@ msgstr "प्रारंभ पर रीसेट करें"
 #: sketcher/ui_gtk/serial_settings.py
 msgid "Delete Counter"
 msgstr "काउंटर हटाएं"
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"टेक्स्ट में {serial()} जोड़ता है। जब भी कोई कार्य भेजा या निर्यात किया जाता "
+"है, तो संख्या में एक की वृद्धि होती है। काउंटर "
+"सेटिंग्स > क्रम संख्याएं में प्रबंधित किए जाते हैं।"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"अगली संख्या: {numbers}। जब भी कोई कार्य भेजा या निर्यात किया जाता है, तो संख्या "
+"में एक की वृद्धि होती है। काउंटर सेटिंग्स > क्रम संख्याएं में प्रबंधित किए "
+"जाते हैं।"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Create a counter below.\n"
+"2. Type {serial(\"name\")} into a text box, or use Insert Serial Number in "
+"Font Properties.\n"
+"3. The counter goes up by one each time a job is sent to the machine or "
+"exported, not for every copy on the canvas.\n"
+"{serial()} without a name uses the counter called \"default\", which is "
+"created after the first job."
+msgstr ""
+"क्रम संख्याएं आपके उत्कीर्ण भागों की गणना करती हैं।\n"
+"1. नीचे एक काउंटर बनाएं।\n"
+"2. टेक्स्ट बॉक्स में {serial(\"name\")} लिखें, या फ़ॉन्ट गुण में "
+"क्रम संख्या डालें का उपयोग करें।\n"
+"3. मशीन को भेजे गए या निर्यात किए गए प्रत्येक कार्य के लिए काउंटर एक बढ़ता "
+"है, कैनवस पर प्रत्येक प्रति के लिए नहीं।\n"
+"बिना नाम के {serial()} \"default\" नामक काउंटर का उपयोग करता है, जो "
+"पहले कार्य के बाद बनता है।"
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "{call} के रूप में उपयोग करें। अगली संख्या: {number}"

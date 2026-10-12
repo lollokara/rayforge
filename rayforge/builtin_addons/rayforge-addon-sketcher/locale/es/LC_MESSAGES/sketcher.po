@@ -1080,3 +1080,47 @@ msgstr "Restablecer al inicio"
 #: sketcher/ui_gtk/serial_settings.py
 msgid "Delete Counter"
 msgstr "Eliminar contador"
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Añade {serial()} al texto. El número aumenta en uno cada vez que se envía o "
+"exporta un trabajo. Los contadores se administran en "
+"Ajustes > Números de serie."
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Siguiente número: {numbers}. Aumenta en uno cada vez que se envía o exporta "
+"un trabajo. Los contadores se administran en "
+"Ajustes > Números de serie."
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Crea un contador a continuación.\n"
+"2. Escribe {serial(\"name\")} en un cuadro de texto o usa "
+"Insertar número de serie en Propiedades de fuente.\n"
+"3. El contador aumenta en uno cada vez que se envía un trabajo a la máquina o "
+"se exporta, no para cada copia en el lienzo.\n"
+"{serial()} sin nombre usa el contador llamado \"default\", que se crea "
+"después del primer trabajo."
+msgstr ""
+"Los números de serie cuentan las piezas grabadas.\n"
+"1. Crea un contador a continuación.\n"
+"2. Escribe {serial(\"name\")} en un cuadro de texto o usa "
+"Insertar número de serie en Propiedades de fuente.\n"
+"3. El contador aumenta en uno cada vez que se envía un trabajo a la máquina o "
+"se exporta, no para cada copia en el lienzo.\n"
+"{serial()} sin nombre usa el contador llamado \"default\", que se crea "
+"después del primer trabajo."
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "Usar como {call}. Siguiente número: {number}"

@@ -1079,3 +1079,47 @@ msgstr "Auf Start zurücksetzen"
 #: sketcher/ui_gtk/serial_settings.py
 msgid "Delete Counter"
 msgstr "Zähler löschen"
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Fügt dem Text {serial()} hinzu. Die Zahl erhöht sich jedes Mal um eins, wenn "
+"ein Auftrag gesendet oder exportiert wird. Zähler werden in "
+"Einstellungen > Seriennummern verwaltet."
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Nächste Zahl: {numbers}. Sie erhöht sich jedes Mal um eins, wenn ein Auftrag "
+"gesendet oder exportiert wird. Zähler werden in "
+"Einstellungen > Seriennummern verwaltet."
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Erstellen Sie unten einen Zähler.\n"
+"2. Geben Sie {serial(\"name\")} in ein Textfeld ein oder verwenden Sie "
+"Seriennummer einfügen in Schriftarteigenschaften.\n"
+"3. Der Zähler erhöht sich jedes Mal um eins, wenn ein Auftrag an die Maschine "
+"gesendet oder exportiert wird, nicht für jedes Exemplar auf der Arbeitsfläche.\n"
+"{serial()} ohne Namen verwendet den Zähler namens \"default\", der nach dem "
+"ersten Auftrag erstellt wird."
+msgstr ""
+"Seriennummern zählen Ihre gravierten Teile.\n"
+"1. Erstellen Sie unten einen Zähler.\n"
+"2. Geben Sie {serial(\"name\")} in ein Textfeld ein oder verwenden Sie "
+"Seriennummer einfügen in Schriftarteigenschaften.\n"
+"3. Der Zähler erhöht sich jedes Mal um eins, wenn ein Auftrag an die Maschine "
+"gesendet oder exportiert wird, nicht für jedes Exemplar auf der Arbeitsfläche.\n"
+"{serial()} ohne Namen verwendet den Zähler namens \"default\", der nach dem "
+"ersten Auftrag erstellt wird."
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "Als {call} verwenden. Nächste Zahl: {number}"
