@@ -6,12 +6,21 @@ Registers asset types and renderers with the main application.
 
 from rayforge.core.hooks import hookimpl
 
+from .core.fonts import load_installed_fonts
+
 ADDON_NAME = "sketcher"
+
+
+@hookimpl
+def rayforge_init(context):
+    """Load user-installed fonts so job geometry uses the same faces."""
+    load_installed_fonts()
 
 
 @hookimpl
 def register_asset_types(asset_type_registry):
     """Register Sketch asset type with the asset type registry."""
+    load_installed_fonts()
     from .core.sketch import Sketch
 
     asset_type_registry.register(Sketch, "sketch", ADDON_NAME)

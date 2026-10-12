@@ -8,11 +8,19 @@ import logging
 
 from rayforge.core.hooks import hookimpl
 
+from .core.fonts import load_installed_fonts
 from .core.serial_dispatch import on_job_dispatched, refresh_serials
 
 logger = logging.getLogger(__name__)
 
 ADDON_NAME = "sketcher"
+
+
+@hookimpl
+def rayforge_init(context):
+    """Load user-installed fonts for the canvas."""
+    load_installed_fonts()
+
 
 _doc_editor = None
 
