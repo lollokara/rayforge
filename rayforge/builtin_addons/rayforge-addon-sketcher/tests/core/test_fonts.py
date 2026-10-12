@@ -89,3 +89,17 @@ def test_is_known_family():
     assert not fonts.is_known_family("Totally Missing", system)
     family = fonts.install_font(FONT_FILE)[0]
     assert fonts.is_known_family(family, system)
+
+
+def test_failed_reinstall_keeps_the_valid_font(tmp_path):
+    fonts.install_font(FONT_FILE)
+    installed = fonts.fonts_dir() / FONT_FILE.name
+    original = installed.read_bytes()
+    broken = tmp_path / FONT_FILE.name
+    broken.write_bytes(b"not a font")
+
+    with pytest.raises(ValueError):
+        fonts.install_font(broken)
+
+    assert installed.read_bytes() == original
+    assert fonts.list_custom_families()

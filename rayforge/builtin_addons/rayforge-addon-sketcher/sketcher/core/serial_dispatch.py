@@ -9,6 +9,7 @@ unless the cache is dropped after an advance and after loading.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from .entities import TextBoxEntity
@@ -20,6 +21,21 @@ if TYPE_CHECKING:
     from rayforge.core.workpiece import WorkPiece
 
 logger = logging.getLogger(__name__)
+
+_doc_source: Callable[[], Doc | None] | None = None
+
+
+def set_doc_source(source: Callable[[], Doc | None] | None) -> None:
+    """Registers how to find the document the user is working on."""
+    global _doc_source
+    _doc_source = source
+
+
+def refresh_current_doc() -> None:
+    """Refreshes the serials of the open document, if there is one."""
+    doc = _doc_source() if _doc_source else None
+    if doc is not None:
+        refresh_serials(doc)
 
 
 def serial_names_in_sketch(sketch: Sketch) -> set[str]:
@@ -47,7 +63,15 @@ def serial_workpieces(doc: Doc) -> list[tuple[WorkPiece, set[str]]]:
 
 def _regenerate(workpieces: list[WorkPiece]) -> None:
     for workpiece in workpieces:
+        width, height = workpiece.size
+        old_natural = workpiece.natural_size
         workpiece.regenerate_from_geometry_provider()
+        new_natural = workpiece.natural_size
+        if all(old_natural) and all(new_natural):
+            workpiece.set_size(
+                width * new_natural[0] / old_natural[0],
+                height * new_natural[1] / old_natural[1],
+            )
 
 
 def refresh_serials(doc: Doc) -> None:

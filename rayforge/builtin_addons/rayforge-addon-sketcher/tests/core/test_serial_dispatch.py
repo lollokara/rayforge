@@ -5,9 +5,11 @@ from sketcher.core.entities.text_box import TextBoxEntity
 from sketcher.core.serial import load_counters
 from sketcher.core.serial_dispatch import (
     on_job_dispatched,
+    refresh_current_doc,
     refresh_serials,
     serial_names_in_sketch,
     serial_workpieces,
+    set_doc_source,
 )
 
 from rayforge.core.doc import Doc
@@ -122,3 +124,29 @@ def test_dispatch_never_raises(mocker):
     )
 
     on_job_dispatched(doc)
+
+
+def test_refresh_keeps_user_scaled_size():
+    doc = Doc()
+    wp = _add_workpiece(doc, _sketch_with_text("{serial()}"))
+    wp.regenerate_from_geometry_provider()
+    natural = wp.size
+    wp.set_size(natural[0] * 3, natural[1] * 2)
+    resized = wp.size
+
+    refresh_serials(doc)
+
+    assert wp.size == pytest.approx(resized)
+
+
+def test_refresh_current_doc_uses_registered_source():
+    doc = Doc()
+    wp = _add_workpiece(doc, _sketch_with_text("{serial()}"))
+    wp._resolved_text_cache = {-1: ("{serial()}", "999")}
+    set_doc_source(lambda: doc)
+    try:
+        refresh_current_doc()
+    finally:
+        set_doc_source(None)
+
+    assert _resolved(wp) == ["1"]

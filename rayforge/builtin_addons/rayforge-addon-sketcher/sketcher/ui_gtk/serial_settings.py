@@ -9,7 +9,13 @@ from gi.repository import Adw
 from rayforge.ui_gtk.shared.pref_rows import SpinRow
 from rayforge.ui_gtk.shared.preferences_page import TrackedPreferencesPage
 
-from ..core.serial import SerialCounter, load_counters, save_counters
+from ..core.serial import (
+    SerialCounter,
+    load_counters,
+    load_counters_for_update,
+    save_counters,
+)
+from ..core.serial_dispatch import refresh_current_doc
 
 logger = logging.getLogger(__name__)
 
@@ -109,38 +115,42 @@ class SerialSettingsPage(TrackedPreferencesPage):
     def add_counter(self, name: str) -> None:
         """Creates a counter with default settings."""
         name = name.strip()
-        counters = self._load()
+        counters = load_counters_for_update()
         if not name or name in counters:
             return
         counters[name] = SerialCounter(name)
         save_counters(counters)
         self._add_group(counters[name])
+        refresh_current_doc()
 
     def update_counter(self, name: str, **changes) -> None:
         """Changes fields of one counter and saves."""
-        counters = self._load()
+        counters = load_counters_for_update()
         counter = counters.get(name)
         if counter is None:
             return
         for field, value in changes.items():
             setattr(counter, field, value)
         save_counters(counters)
+        refresh_current_doc()
 
     def reset_counter(self, name: str) -> None:
         """Sets the counter back to its start value."""
-        counters = self._load()
+        counters = load_counters_for_update()
         if name not in counters:
             return
         counters[name].reset()
         save_counters(counters)
         self._rebuild_group(name)
+        refresh_current_doc()
 
     def delete_counter(self, name: str) -> None:
-        counters = self._load()
+        counters = load_counters_for_update()
         if counters.pop(name, None) is None:
             return
         save_counters(counters)
         self._rebuild_group(name)
+        refresh_current_doc()
 
     def _on_add_applied(self, row: Adw.EntryRow) -> None:
         self.add_counter(row.get_text())

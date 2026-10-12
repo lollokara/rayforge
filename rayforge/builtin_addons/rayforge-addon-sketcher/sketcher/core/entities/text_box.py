@@ -144,6 +144,8 @@ class TextBoxEntity(Entity):
                 continue
             if isinstance(STYLE_DEFAULTS[key], float):
                 value = float(value)
+            if key == "knockout_margin":
+                value = max(value, 0.0)
             setattr(self, key, value)
 
     def get_frame_polygon(

@@ -1,8 +1,11 @@
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from sketcher.core import Sketch
+from sketcher.core.entities import TextBoxEntity
+from sketcher.core.entities.text_box import STYLE_DEFAULTS
 
 from rayforge.core.doc import Doc
 from rayforge.core.source_asset import SourceAsset
@@ -97,3 +100,20 @@ class TestRoundTripSketch:
             if isinstance(a, Sketch)
         ]
         assert len(sketches) == 1
+
+
+def test_legacy_text_sketch_loads_text_boxes_with_default_style():
+    path = Path(__file__).parents[4] / "tests" / "assets" / "textsketch.ryp"
+    project = json.loads(path.read_text(encoding="utf-8"))
+
+    boxes = [
+        entity
+        for asset in project["assets"]
+        if asset.get("type") == "sketch"
+        for entity in Sketch.from_dict(asset).registry.entities
+        if isinstance(entity, TextBoxEntity)
+    ]
+
+    assert boxes
+    for box in boxes:
+        assert box.get_style() == dict(STYLE_DEFAULTS)

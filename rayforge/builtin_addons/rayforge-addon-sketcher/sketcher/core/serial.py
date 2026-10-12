@@ -96,6 +96,29 @@ def save_counters(counters: dict[str, SerialCounter]) -> None:
     os.replace(tmp, path)
 
 
+def backup_corrupt(path: Path) -> Path:
+    """Moves an unreadable file aside to ``<name>.bak``, or to the
+    first free ``<name>.bak.N`` so an older backup is never lost."""
+    target = path.with_name(path.name + ".bak")
+    index = 1
+    while target.exists():
+        target = path.with_name(f"{path.name}.bak.{index}")
+        index += 1
+    os.replace(path, target)
+    return target
+
+
+def load_counters_for_update() -> dict[str, SerialCounter]:
+    """Like ``load_counters`` for callers about to overwrite the file:
+    a corrupt file is backed up first and counting restarts empty."""
+    try:
+        return load_counters()
+    except ValueError as e:
+        path = serials_path()
+        logger.error(f"{e}; keeping it as {backup_corrupt(path).name}")
+        return {}
+
+
 def peek(name: str = DEFAULT_NAME) -> str:
     """The current formatted value of counter *name*. Never advances
     and never writes; an unknown counter formats its defaults."""
@@ -120,13 +143,7 @@ def advance(names: Iterable[str]) -> None:
         return
     # shortcut: read-modify-write without a file lock, upgrade if two
     # windows dispatching in the same instant becomes a real case
-    try:
-        counters = load_counters()
-    except ValueError as e:
-        logger.error(f"{e}; keeping it as serials.json.bak")
-        path = serials_path()
-        os.replace(path, path.with_suffix(".json.bak"))
-        counters = {}
+    counters = load_counters_for_update()
     for name in sorted(wanted):
         counter = counters.setdefault(name, SerialCounter(name))
         counter.value += counter.step

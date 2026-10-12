@@ -714,3 +714,9 @@ def test_knockout_is_ignored_on_a_path(registry):
     assert box.to_fill_geometry(registry).rect() == pytest.approx(
         box.to_geometry(registry).rect()
     )
+
+
+def test_set_style_clamps_negative_knockout_margin(registry):
+    box = _make_text_box(registry)
+    box.set_style({"knockout_margin": -3.0})
+    assert box.knockout_margin == 0.0

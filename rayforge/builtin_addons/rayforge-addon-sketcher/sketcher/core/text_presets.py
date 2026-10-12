@@ -18,6 +18,7 @@ from raygeo.geo.shape.text import FontConfig
 from rayforge.config import get_addon_data_dir
 
 from .entities.text_box import STYLE_DEFAULTS, TextBoxEntity
+from .serial import backup_corrupt
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +70,10 @@ def _parse(item: Any) -> TextPreset | None:
     )
 
 
-def load_presets() -> list[TextPreset]:
+def load_presets(backup_unreadable: bool = False) -> list[TextPreset]:
     """All saved presets, sorted by name. A missing or unreadable file
-    yields an empty list."""
+    yields an empty list; with *backup_unreadable* the unreadable file
+    is first moved aside so the caller can overwrite it safely."""
     try:
         data = json.loads(presets_path().read_text(encoding="utf-8"))
         items = data["presets"]
@@ -79,8 +81,12 @@ def load_presets() -> list[TextPreset]:
         return []
     except (OSError, ValueError, KeyError, TypeError) as e:
         logger.warning(f"Cannot read text presets: {e}")
+        if backup_unreadable and presets_path().exists():
+            backup_corrupt(presets_path())
         return []
     if not isinstance(items, list):
+        if backup_unreadable:
+            backup_corrupt(presets_path())
         return []
     presets = [p for p in map(_parse, items) if p is not None]
     return sorted(presets, key=lambda preset: preset.name.lower())
@@ -100,13 +106,13 @@ def _write(presets: list[TextPreset]) -> None:
 
 def save_preset(preset: TextPreset) -> None:
     """Saves *preset*, replacing any preset of the same name."""
-    others = [p for p in load_presets() if p.name != preset.name]
+    others = [p for p in load_presets(True) if p.name != preset.name]
     _write(others + [preset])
 
 
 def delete_preset(name: str) -> None:
     """Deletes the preset called *name*, if there is one."""
-    presets = load_presets()
+    presets = load_presets(True)
     remaining = [p for p in presets if p.name != name]
     if len(remaining) != len(presets):
         _write(remaining)

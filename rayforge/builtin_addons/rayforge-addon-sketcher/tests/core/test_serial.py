@@ -154,3 +154,16 @@ def test_save_leaves_no_temp_file(data_dir):
 )
 def test_find_serial_names(text, expected):
     assert find_serial_names(text) == expected
+
+
+def test_advance_keeps_older_backup(data_dir):
+    path = serial.serials_path()
+    path.write_text("{ first", encoding="utf-8")
+    advance(["a"])
+    path.write_text("{ second", encoding="utf-8")
+
+    advance(["a"])
+
+    folder = data_dir / "sketcher"
+    assert (folder / "serials.json.bak").read_text() == "{ first"
+    assert (folder / "serials.json.bak.1").read_text() == "{ second"

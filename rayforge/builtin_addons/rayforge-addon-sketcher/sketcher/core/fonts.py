@@ -51,11 +51,18 @@ def install_font(src: Path) -> list[str]:
     if src.suffix.lower() not in FONT_SUFFIXES:
         raise ValueError(f"Not a font file: {src.name}")
     dest = fonts_dir() / src.name
+    previous_bytes = dest.read_bytes() if dest.exists() else None
+    previous_families = _families_by_file.pop(str(dest), None)
     shutil.copyfile(src, dest)
     try:
         return _load(dest)
     except (OSError, ValueError) as e:
-        dest.unlink(missing_ok=True)
+        if previous_bytes is None:
+            dest.unlink(missing_ok=True)
+        else:
+            dest.write_bytes(previous_bytes)
+        if previous_families is not None:
+            _families_by_file[str(dest)] = previous_families
         raise ValueError(f"Cannot read font {src.name}: {e}") from e
 
 

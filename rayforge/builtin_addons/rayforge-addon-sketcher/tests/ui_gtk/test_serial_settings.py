@@ -79,3 +79,32 @@ def test_page_survives_corrupt_file(data_dir):
     (data_dir / "sketcher" / "serials.json").write_text("{ nope")
     page = SerialSettingsPage()
     assert page.counter_groups == {}
+
+
+@pytest.mark.ui
+def test_corrupt_file_is_backed_up_before_edit(data_dir):
+    folder = data_dir / "sketcher"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "serials.json").write_text("{ nope")
+    page = SerialSettingsPage()
+
+    page.add_counter("batch")
+
+    assert (folder / "serials.json.bak").read_text() == "{ nope"
+    assert "batch" in load_counters()
+
+
+@pytest.mark.ui
+def test_edits_refresh_the_open_document(mocker):
+    refresh = mocker.patch(
+        "sketcher.ui_gtk.serial_settings.refresh_current_doc"
+    )
+    save_counters({"a": SerialCounter("a", value=5)})
+    page = SerialSettingsPage()
+
+    page.update_counter("a", value=7)
+    page.reset_counter("a")
+    page.delete_counter("a")
+    page.add_counter("b")
+
+    assert refresh.call_count == 4

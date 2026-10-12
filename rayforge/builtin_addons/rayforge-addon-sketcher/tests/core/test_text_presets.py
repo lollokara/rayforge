@@ -129,3 +129,22 @@ def test_save_leaves_no_temp_file(data_dir):
     assert [p.name for p in (data_dir / "sketcher").iterdir()] == [
         "text_presets.json"
     ]
+
+
+def test_save_preset_backs_up_corrupt_file(data_dir):
+    text_presets.presets_path().write_text("{ nope", encoding="utf-8")
+
+    save_preset(TextPreset("A", FontConfig().to_dict()))
+
+    backup = data_dir / "sketcher" / "text_presets.json.bak"
+    assert backup.read_text(encoding="utf-8") == "{ nope"
+    assert [p.name for p in load_presets()] == ["A"]
+
+
+def test_delete_preset_backs_up_corrupt_file(data_dir):
+    text_presets.presets_path().write_text("{ nope", encoding="utf-8")
+
+    delete_preset("A")
+
+    backup = data_dir / "sketcher" / "text_presets.json.bak"
+    assert backup.read_text(encoding="utf-8") == "{ nope"
