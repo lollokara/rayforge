@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import cairo
 from gi.repository import PangoCairo
 from raygeo.geo import Geometry, Matrix
-from raygeo.geo.shape.text import text_to_geometry
 from raygeo.geo.types import Point as GeoPoint
 
 from rayforge.image.geo_renderer import geometry_to_cairo
@@ -592,24 +591,9 @@ class SketchRenderer:
         if not (p_origin and p_width and p_height):
             return False
 
-        natural_geo = text_to_geometry(
-            entity.content, font_config=entity.font_config
+        geometry_to_cairo(
+            entity.to_geometry(self.element.sketch.registry), ctx
         )
-        _, geo_min_y, _, geo_max_y = natural_geo.rect()
-        text_width = entity.font_config.get_text_width(entity.content)
-        advance_width = text_width or 1.0
-
-        transformed_geo = natural_geo.map_to_frame(
-            (p_origin.x, p_origin.y),
-            (p_width.x, p_width.y),
-            (p_height.x, p_height.y),
-            anchor_x=0.0,
-            stable_src_width=advance_width,
-            anchor_y=geo_min_y,
-            stable_src_height=geo_max_y - geo_min_y,
-        )
-
-        geometry_to_cairo(transformed_geo, ctx)
         return True
 
     # --- Overlays (Constraints & Junctions) ---

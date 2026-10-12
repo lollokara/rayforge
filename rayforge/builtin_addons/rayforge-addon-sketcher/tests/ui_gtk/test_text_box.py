@@ -497,3 +497,23 @@ def test_font_change_when_not_editing_pushes_command(
     assert len(editor.history_manager.undo_stack) == 1
     cmd = editor.history_manager.undo_stack[-1]
     assert isinstance(cmd, ModifyTextPropertyCommand)
+
+
+@pytest.mark.ui
+def test_define_text_box_path_uses_entity_geometry(
+    sketch_with_text_box, mocker
+):
+    """The canvas must draw what TextBoxEntity.to_geometry returns."""
+    sketch, tb_id = sketch_with_text_box
+    entity = sketch.registry.get_entity(tb_id)
+    renderer = Mock()
+    renderer.element.sketch = sketch
+    renderer._safe_get_point = sketch.registry.get_point
+    sentinel = object()
+    mocker.patch.object(TextBoxEntity, "to_geometry", return_value=sentinel)
+    to_cairo = mocker.patch("sketcher.ui_gtk.renderer.geometry_to_cairo")
+    ctx = Mock()
+
+    assert SketchRenderer._define_text_box_path(renderer, ctx, entity)
+
+    to_cairo.assert_called_once_with(sentinel, ctx)
