@@ -87,3 +87,25 @@ def test_chained_attribute_access():
     today = datetime.now(tz=timezone.utc).date()
     result = _fmt("{d.year}", {"d": today})
     assert result == str(today.year)
+
+
+def test_segments_split_static_and_dynamic():
+    """Placeholders are dynamic, surrounding text is static."""
+    segs = ExpressionMap({"n": 7}).segments("A{n:03d}B")
+    assert segs == [("A", False), ("007", True), ("B", False)]
+
+
+def test_segments_failed_expression_is_static():
+    """An unresolvable placeholder stays literal and not dynamic."""
+    assert ExpressionMap().segments("{nope}") == [("{nope}", False)]
+
+
+def test_segments_join_equals_format():
+    """Joining the segments reproduces format() exactly."""
+    tpl = "x{a}-{a:.1f}{missing} y"
+    m = ExpressionMap({"a": 2.5})
+    assert "".join(t for t, _ in m.segments(tpl)) == m.format(tpl)
+
+
+def test_segments_empty_template():
+    assert ExpressionMap().segments("") == []

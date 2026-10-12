@@ -37,22 +37,38 @@ class ExpressionMap:
             self._namespace.update(values)
         self._namespace["__builtins__"] = {}
 
+    def _evaluate(self, match: re.Match) -> tuple[str, bool]:
+        key = match.group(1)
+        expr, _, fmt = key.partition(":")
+        try:
+            result = eval(expr.strip(), self._namespace)
+        except Exception as e:  # noqa: BLE001 - arbitrary user expression
+            logger.debug(f"Failed to evaluate expression '{expr}': {e}")
+            return match.group(0), False
+        if fmt:
+            try:
+                return format(result, fmt), True
+            except (ValueError, TypeError):
+                return str(result), True
+        return str(result), True
+
+    def segments(self, template: str) -> list[tuple[str, bool]]:
+        """
+        Splits the resolved *template* into ``(text, is_dynamic)``
+        pieces. Text produced by a successfully evaluated placeholder
+        is dynamic; literal text and unresolvable placeholders are not.
+        """
+        result: list[tuple[str, bool]] = []
+        pos = 0
+        for match in _PLACEHOLDER_RE.finditer(template):
+            if match.start() > pos:
+                result.append((template[pos : match.start()], False))
+            result.append(self._evaluate(match))
+            pos = match.end()
+        if pos < len(template):
+            result.append((template[pos:], False))
+        return result
+
     def format(self, template: str) -> str:
         """Resolve all ``{expression}`` placeholders in *template*."""
-
-        def _replace(match: re.Match) -> str:
-            key = match.group(1)
-            expr, _, fmt = key.partition(":")
-            try:
-                result = eval(expr.strip(), self._namespace)
-            except Exception as e:  # noqa: BLE001 - arbitrary user expression
-                logger.debug(f"Failed to evaluate expression '{expr}': {e}")
-                return match.group(0)
-            if fmt:
-                try:
-                    return format(result, fmt)
-                except (ValueError, TypeError):
-                    return str(result)
-            return str(result)
-
-        return _PLACEHOLDER_RE.sub(_replace, template)
+        return "".join(text for text, _ in self.segments(template))
