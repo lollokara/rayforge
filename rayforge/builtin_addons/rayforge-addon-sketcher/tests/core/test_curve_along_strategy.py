@@ -8,8 +8,10 @@ from sketcher.core.arrays import (
     sample_path,
 )
 from sketcher.core.arrays.curve_along import (
-    _cumulative_lengths,
-    _point_at_arclength,
+    cumulative_lengths,
+    path_length,
+    point_at_arclength,
+    polyline_for,
 )
 from sketcher.core.sketch import Sketch
 
@@ -97,23 +99,23 @@ def test_sample_unknown_entity_returns_empty():
 # ----------------------------------------------------------------------
 
 
-def test_cumulative_lengths():
-    cum = _cumulative_lengths([(0, 0), (3, 0), (3, 4)])
+def testcumulative_lengths():
+    cum = cumulative_lengths([(0, 0), (3, 0), (3, 4)])
     assert cum == pytest.approx([0.0, 3.0, 7.0])
 
 
 def test_point_at_arclength_interpolates():
     poly = [(0.0, 0.0), (10.0, 0.0)]
-    cum = _cumulative_lengths(poly)
-    point, tan = _point_at_arclength(poly, cum, 4.0)
+    cum = cumulative_lengths(poly)
+    point, tan = point_at_arclength(poly, cum, 4.0)
     assert point == pytest.approx((4.0, 0.0))
     assert tan == pytest.approx((1.0, 0.0))
 
 
 def test_point_at_arclength_clamps_to_end():
     poly = [(0.0, 0.0), (10.0, 0.0)]
-    cum = _cumulative_lengths(poly)
-    point, _tan = _point_at_arclength(poly, cum, 100.0)
+    cum = cumulative_lengths(poly)
+    point, _tan = point_at_arclength(poly, cum, 100.0)
     assert point == pytest.approx((10.0, 0.0))
 
 
@@ -202,3 +204,44 @@ def test_placement_transform_offset_rotates_only():
     dx, dy = placement.transform_offset(1.0, 0.0)
     assert dx == pytest.approx(0.0)
     assert dy == pytest.approx(1.0)
+
+
+def test_polyline_for_circle_is_closed_and_on_radius():
+    sketch = Sketch()
+    c = sketch.registry.add_point(5.0, 5.0)
+    r = sketch.registry.add_point(15.0, 5.0)
+    circle_id = sketch.registry.add_circle(c, r)
+    circle = sketch.registry.get_entity(circle_id)
+    assert circle is not None
+
+    polyline = polyline_for(circle, sketch.registry)
+
+    assert polyline[0] == pytest.approx((15.0, 5.0))
+    assert polyline[-1] == pytest.approx(polyline[0])
+    for x, y in polyline:
+        assert math.hypot(x - 5.0, y - 5.0) == pytest.approx(10.0)
+    assert polyline[1][1] > 5.0
+
+
+def test_path_length_of_circle_is_circumference():
+    sketch = Sketch()
+    c = sketch.registry.add_point(0.0, 0.0)
+    r = sketch.registry.add_point(10.0, 0.0)
+    circle_id = sketch.registry.add_circle(c, r)
+
+    assert path_length(sketch.registry, circle_id) == pytest.approx(
+        2 * math.pi * 10.0, rel=1e-3
+    )
+
+
+def test_sample_circle_path_returns_points_on_circle():
+    sketch = Sketch()
+    c = sketch.registry.add_point(0.0, 0.0)
+    r = sketch.registry.add_point(10.0, 0.0)
+    circle_id = sketch.registry.add_circle(c, r)
+
+    samples = sample_path(sketch.registry, circle_id, count=5)
+
+    assert len(samples) == 5
+    for (x, y), _angle in samples:
+        assert math.hypot(x, y) == pytest.approx(10.0, rel=1e-3)
