@@ -2082,6 +2082,21 @@ def _locate(
     )
 
 
+def _inside_polyline(polyline: Polyline) -> Polyline:
+    """
+    Reverses *polyline* for inside text. A closed path is also rolled by
+    half its points, so the centre of the reversed path lies on the side
+    of the circle opposite the centre of the original path.
+    """
+    reversed_line = polyline[::-1]
+    if not _is_closed(reversed_line):
+        return reversed_line
+    ring = reversed_line[:-1]
+    half = len(ring) // 2
+    rolled = ring[half:] + ring[:half]
+    return rolled + [rolled[0]]
+
+
 def text_on_path(
     text: str,
     font_config: FontConfig,
@@ -2102,7 +2117,7 @@ def text_on_path(
     if len(polyline) < 2:
         return geo
     if side == "inside":
-        polyline = polyline[::-1]
+        polyline = _inside_polyline(polyline)
     cum = cumulative_lengths(polyline)
     total = cum[-1]
     if total <= 1e-9:
@@ -2389,8 +2404,8 @@ Add these methods after `_frame_glyphs`:
                 text_on_path(
                     self.content_bottom,
                     self.font_config,
-                    polyline[::-1],
-                    "outside",
+                    polyline,
+                    "inside",
                     "center",
                     -self.path_offset,
                 )
@@ -2408,11 +2423,12 @@ Add these methods after `_frame_glyphs`:
 
 Notes for the implementer:
 
-- The circle polyline runs clockwise from the bottom. Its reverse runs
-counter-clockwise from the bottom, so text centred on it sits at the
-bottom with its ascenders pointing at the centre: upright, inside the
-circle. That is why the bottom string uses `polyline[::-1]` with side
-`"outside"`, and why `path_side="inside"` on a circle lands at the bottom.
+- The circle polyline runs clockwise from the bottom, so text centred on it
+sits at the top. `side="inside"` reverses it and rolls it by half, so text
+centred on it sits at the bottom with its ascenders pointing at the
+centre: upright, inside the circle. That is why the bottom string uses the
+same polyline with side `"inside"`, and why `path_side="inside"` on a
+circle lands at the bottom.
 - `registry.get_entity(None)` is never reached: `_path_glyphs` is only
 called when `get_path_polyline` returned a polyline.
 
