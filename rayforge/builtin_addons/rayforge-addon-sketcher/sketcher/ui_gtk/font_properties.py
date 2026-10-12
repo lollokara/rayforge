@@ -13,7 +13,7 @@ from rayforge.ui_gtk.shared.pref_rows import (
     SpinRow,
 )
 
-from ..core import fonts
+from ..core import fonts, text_presets
 from ..core.commands.text_property import (
     ModifyTextPropertyCommand,
 )
@@ -66,6 +66,7 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         self._text_entity_id: int | None = None
         self._in_update = False
         self._current_font_family = "sans-serif"
+        self._presets: list[text_presets.TextPreset] = []
         self._path_candidate_id: int | None = None
         self._path_entity_id: int | None = None
 
@@ -79,6 +80,25 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
 
     def _build_ui(self):
         """Builds the UI for font properties."""
+        self.preset_row = Adw.ComboRow()
+        self.preset_row.set_title(_("Preset"))
+        self.preset_row.connect("notify::selected", self._on_preset_selected)
+        self.add(self.preset_row)
+
+        self.save_preset_row = Adw.EntryRow()
+        self.save_preset_row.set_title(_("Save as Preset"))
+        self.save_preset_row.set_show_apply_button(True)
+        self.save_preset_row.connect("apply", self._on_save_preset_applied)
+        self.add(self.save_preset_row)
+
+        self.delete_preset_row = Adw.ActionRow()
+        self.delete_preset_row.set_title(_("Delete Preset"))
+        self.delete_preset_row.set_activatable(True)
+        self.delete_preset_row.connect(
+            "activated", self._on_delete_preset_activated
+        )
+        self.add(self.delete_preset_row)
+
         self.font_family_row = Adw.ActionRow()
         self.font_family_row.set_title(_("Font Family"))
         self.font_family_row.set_subtitle(self._current_font_family)
@@ -263,6 +283,7 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         self.set_visible(True)
         self._update_ui_from_model(entity.font_config)
         self._update_style_ui(entity)
+        self._refresh_presets()
 
     def _update_ui_from_model(self, font_config: FontConfig):
         """Updates the UI widgets from the font configuration."""
@@ -436,6 +457,81 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         finally:
             self._in_update = False
         self._apply_font_config()
+
+    def _text_entity(self) -> TextBoxEntity | None:
+        """The text entity currently shown, if it still exists."""
+        sketch_element = self.editor.sketch_element
+        if self._text_entity_id is None or not sketch_element:
+            return None
+        entity = sketch_element.sketch.registry.get_entity(
+            self._text_entity_id
+        )
+        return entity if isinstance(entity, TextBoxEntity) else None
+
+    def _refresh_presets(self):
+        """Reloads the preset list; nothing is selected afterwards."""
+        self._in_update = True
+        try:
+            self._presets = text_presets.load_presets()
+            self.preset_row.set_model(
+                Gtk.StringList.new(
+                    [_("Choose…")] + [p.name for p in self._presets]
+                )
+            )
+            self.preset_row.set_selected(0)
+        finally:
+            self._in_update = False
+
+    def _selected_preset(self) -> text_presets.TextPreset | None:
+        index = self.preset_row.get_selected()
+        if 0 < index <= len(self._presets):
+            return self._presets[index - 1]
+        return None
+
+    def _apply_preset(self, preset: text_presets.TextPreset):
+        """Applies font and style of *preset* as one undoable step."""
+        sketch_element = self.editor.sketch_element
+        if not sketch_element:
+            return
+        entity = self._text_entity()
+        if entity is None:
+            return
+        cmd = ModifyTextPropertyCommand(
+            sketch=sketch_element.sketch,
+            text_entity_id=entity.id,
+            new_content=entity.content,
+            new_font_config=preset.font_config(),
+            new_style=dict(preset.style),
+        )
+        self.editor.history_manager.execute(cmd)
+        self._update_ui_from_model(entity.font_config)
+        self._update_style_ui(entity)
+
+    def _on_preset_selected(self, row, *args):
+        """Applies the preset picked in the list."""
+        if self._in_update:
+            return
+        preset = self._selected_preset()
+        if preset is not None:
+            self._apply_preset(preset)
+
+    def _on_save_preset_applied(self, row):
+        """Saves the current font and style under the entered name."""
+        name = row.get_text().strip()
+        entity = self._text_entity()
+        if not name or entity is None:
+            return
+        text_presets.save_preset(text_presets.preset_from_entity(name, entity))
+        row.set_text("")
+        self._refresh_presets()
+
+    def _on_delete_preset_activated(self, row, *args):
+        """Deletes the preset selected in the list."""
+        preset = self._selected_preset()
+        if preset is None:
+            return
+        text_presets.delete_preset(preset.name)
+        self._refresh_presets()
 
     def _update_follow_path_subtitle(self):
         """Explains what activating the follow-path row will do."""

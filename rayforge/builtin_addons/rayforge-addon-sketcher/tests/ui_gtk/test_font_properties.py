@@ -14,7 +14,7 @@ if sys.platform.startswith("linux"):
         )
 
 from raygeo.geo.shape.text import FontConfig
-from sketcher.core import Sketch, fonts
+from sketcher.core import Sketch, fonts, text_presets
 from sketcher.ui_gtk.font_properties import (
     FontPropertiesWidget,
     split_text_selection,
@@ -214,3 +214,68 @@ def test_install_rejected_file_keeps_font(font_data_dir, widget_with_box):
     widget._install_font_file(bogus)
 
     assert entity.font_config.family == before
+
+
+@pytest.fixture
+def preset_data_dir(tmp_path, monkeypatch):
+    monkeypatch.setattr("rayforge.config.ADDON_DATA_DIR", tmp_path)
+    return tmp_path
+
+
+@pytest.mark.ui
+def test_save_preset_from_current_text(preset_data_dir, widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    sketch.registry.get_entity(tb_id).set_style({"mirrored": True})
+    widget.set_text_entity(tb_id)
+
+    widget.save_preset_row.set_text("Mirrored")
+    widget._on_save_preset_applied(widget.save_preset_row)
+
+    (preset,) = text_presets.load_presets()
+    assert preset.name == "Mirrored"
+    assert preset.style["mirrored"] is True
+    assert widget.save_preset_row.get_text() == ""
+
+
+@pytest.mark.ui
+def test_apply_preset_is_one_undo_step(preset_data_dir, widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+    preset = text_presets.TextPreset(
+        "Big",
+        FontConfig(family="serif", size=20.0).to_dict(),
+        {"vertical": True, "rotation": 90.0},
+    )
+
+    widget._apply_preset(preset)
+
+    assert entity.font_config.size == 20.0
+    assert entity.vertical is True
+    assert entity.content == "Hello"
+    assert widget.vertical_switch.get_active() is True
+
+    widget.editor.history_manager.undo()
+    assert entity.font_config.size == 10.0
+    assert entity.vertical is False
+
+
+@pytest.mark.ui
+def test_delete_selected_preset(preset_data_dir, widget_with_box):
+    widget, _, tb_id = widget_with_box
+    text_presets.save_preset(
+        text_presets.TextPreset("Gone", FontConfig().to_dict(), {})
+    )
+    widget.set_text_entity(tb_id)
+    widget.preset_row.set_selected(1)
+
+    widget._on_delete_preset_activated(widget.delete_preset_row)
+
+    assert text_presets.load_presets() == []
+
+
+@pytest.mark.ui
+def test_blank_preset_name_is_not_saved(preset_data_dir, widget_with_box):
+    widget, _, _ = widget_with_box
+    widget.save_preset_row.set_text("   ")
+    widget._on_save_preset_applied(widget.save_preset_row)
+    assert text_presets.load_presets() == []
