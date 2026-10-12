@@ -99,6 +99,7 @@ msgstr "Введіть довжину або вираз."
 
 #: sketcher/core/constraints/vertical.py
 #: sketcher/ui_gtk/tools/vertical_constraint_tool.py
+#: sketcher/ui_gtk/font_properties.py
 msgid "Vertical"
 msgstr "Вертикаль"
 
@@ -900,3 +901,181 @@ msgstr "Файл ескізу містить недійсний JSON: {}"
 #: sketcher/image/importer.py
 msgid "Failed to load sketch structure: {}"
 msgstr "Не вдалося завантажити структуру ескізу: {}"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Mirror"
+msgstr "Віддзеркалити"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Reverse Characters"
+msgstr "Зворотний порядок символів"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Upside Down"
+msgstr "Догори дном"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Rotation"
+msgstr "Обертання"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out"
+msgstr "Knock-out"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out Margin"
+msgstr "Поля knock-out"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Follow Path"
+msgstr "Слідувати контуру"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Side"
+msgstr "Сторона контуру"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Outside"
+msgstr "Ззовні"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Inside"
+msgstr "Всередині"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Alignment"
+msgstr "Вирівнювання контуру"
+
+#: sketcher/ui_gtk/font_properties.py
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Start"
+msgstr "Старт"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Center"
+msgstr "Центр"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "End"
+msgstr "Кінець"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Offset"
+msgstr "Зсув контуру"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bottom Text"
+msgstr "Нижній текст"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bind the text to the selected shape"
+msgstr "Прив'язати текст до вибраної форми"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Following a path. Activate to release"
+msgstr "Слідує контуру. Активуйте, щоб відкріпити"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Select the text box together with a line, arc, circle or curve"
+msgstr "Виберіть текстове поле разом із лінією, дугою, колом або кривою"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Not Installed"
+msgstr "Шрифт не встановлено"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "A substitute font is used. Install the font or pick another."
+msgstr "Використовується шрифт-замінник. Встановіть шрифт або виберіть інший."
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Custom Font"
+msgstr "Користувацький шрифт"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font…"
+msgstr "Встановити шрифт…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Remove Custom Font"
+msgstr "Видалити користувацький шрифт"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "None"
+msgstr "Немає"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid "Could not install {name}"
+msgstr "Не вдалося встановити {name}"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Files"
+msgstr "Файли шрифтів"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font"
+msgstr "Встановити шрифт"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Preset"
+msgstr "Пресет"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Save as Preset"
+msgstr "Зберегти як пресет"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Delete Preset"
+msgstr "Видалити пресет"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Choose…"
+msgstr "Обрати…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Insert Serial Number"
+msgstr "Вставити серійний номер"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Counters are managed in Settings"
+msgstr "Лічильники налаштовуються в Параметрах"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Serial Numbers"
+msgstr "Серійні номери"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Counters advance once for every job sent to the machine or exported. Use them in a text box with {serial(\"name\")}."
+msgstr "Лічильники збільшуються на одиницю для кожного завдання, надісланого на верстат або експортованого. Використовуйте їх у текстовому полі з {serial(\"name\")}."
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "New Counter Name"
+msgstr "Назва нового лічильника"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Current Value"
+msgstr "Поточне значення"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Step"
+msgstr "Крок"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Zero Padding"
+msgstr "Доповнення нулями"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Prefix"
+msgstr "Префікс"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Suffix"
+msgstr "Суфікс"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Reset to Start"
+msgstr "Скинути до початкового"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Delete Counter"
+msgstr "Видалити лічильник"

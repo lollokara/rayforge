@@ -98,6 +98,7 @@ msgstr "Länge oder Ausdruck eingeben."
 
 #: sketcher/core/constraints/vertical.py
 #: sketcher/ui_gtk/tools/vertical_constraint_tool.py
+#: sketcher/ui_gtk/font_properties.py
 msgid "Vertical"
 msgstr "Vertikal"
 
@@ -900,3 +901,181 @@ msgstr "Skizzen-Datei ist ungültiges JSON: {}"
 #: sketcher/image/importer.py
 msgid "Failed to load sketch structure: {}"
 msgstr "Fehler beim Laden der Skizzenstruktur: {}"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Mirror"
+msgstr "Spiegeln"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Reverse Characters"
+msgstr "Zeichen umkehren"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Upside Down"
+msgstr "Auf dem Kopf"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Rotation"
+msgstr "Drehung"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out"
+msgstr "Knock-out"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out Margin"
+msgstr "Knock-out-Rand"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Follow Path"
+msgstr "Pfad folgen"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Side"
+msgstr "Pfadseite"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Outside"
+msgstr "Außen"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Inside"
+msgstr "Innen"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Alignment"
+msgstr "Pfadausrichtung"
+
+#: sketcher/ui_gtk/font_properties.py
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Start"
+msgstr "Start"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Center"
+msgstr "Mitte"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "End"
+msgstr "Ende"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Offset"
+msgstr "Pfadversatz"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bottom Text"
+msgstr "Unterer Text"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bind the text to the selected shape"
+msgstr "Text an die ausgewählte Form binden"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Following a path. Activate to release"
+msgstr "Folgt einem Pfad. Aktivieren zum Lösen"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Select the text box together with a line, arc, circle or curve"
+msgstr "Textfeld zusammen mit einer Linie, einem Bogen, Kreis oder einer Kurve auswählen"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Not Installed"
+msgstr "Schriftart nicht installiert"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "A substitute font is used. Install the font or pick another."
+msgstr "Eine Ersatzschriftart wird verwendet. Schriftart installieren oder eine andere wählen."
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Custom Font"
+msgstr "Benutzerdefinierte Schriftart"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font…"
+msgstr "Schriftart installieren…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Remove Custom Font"
+msgstr "Benutzerdefinierte Schriftart entfernen"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "None"
+msgstr "Keine"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid "Could not install {name}"
+msgstr "{name} konnte nicht installiert werden"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Files"
+msgstr "Schriftdateien"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font"
+msgstr "Schriftart installieren"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Preset"
+msgstr "Voreinstellung"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Save as Preset"
+msgstr "Als Voreinstellung speichern"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Delete Preset"
+msgstr "Voreinstellung löschen"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Choose…"
+msgstr "Auswählen…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Insert Serial Number"
+msgstr "Seriennummer einfügen"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Counters are managed in Settings"
+msgstr "Zähler werden in den Einstellungen verwaltet"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Serial Numbers"
+msgstr "Seriennummern"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Counters advance once for every job sent to the machine or exported. Use them in a text box with {serial(\"name\")}."
+msgstr "Zähler erhöhen sich einmal für jeden Auftrag, der an die Maschine gesendet oder exportiert wird. Verwendung im Textfeld mit {serial(\"name\")}."
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "New Counter Name"
+msgstr "Neuer Zählername"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Current Value"
+msgstr "Aktueller Wert"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Step"
+msgstr "Schritt"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Zero Padding"
+msgstr "Null-Auffüllung"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Prefix"
+msgstr "Präfix"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Suffix"
+msgstr "Suffix"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Reset to Start"
+msgstr "Auf Start zurücksetzen"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Delete Counter"
+msgstr "Zähler löschen"
