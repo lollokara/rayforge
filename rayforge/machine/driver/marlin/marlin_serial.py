@@ -424,6 +424,7 @@ class MarlinSerialDriver(Driver):
             ConnectionError,
             DeviceConnectionError,
         ) as e:
+            self.job_failed = True
             logger.warning(f"Job interrupted: {e!r}")
             if not self._is_cancelled:
                 logger.info(f"Calling cancel() due to interruption: {e!r}")

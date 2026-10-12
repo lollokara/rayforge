@@ -328,13 +328,18 @@ class MachineCmd:
         if not isinstance(artifact, JobArtifact):
             raise TypeError("_run_send_action received a non-JobArtifact")
 
+        machine.driver.job_failed = False
         await self._execute_monitored_job(
             artifact.ops,
             machine,
             on_progress=on_progress,
             encoded=artifact.encoded_output,
         )
-        if notify_dispatch and not artifact.ops.is_empty():
+        if (
+            notify_dispatch
+            and not artifact.ops.is_empty()
+            and machine.driver.job_failed is not True
+        ):
             self._scheduler(self._notify_job_dispatched, "send")
 
     async def _start_job(
@@ -492,6 +497,7 @@ class MachineCmd:
     def cancel_job(self, machine: Machine):
         """Adds a task to cancel the currently running job on the machine."""
         driver = machine.driver
+        driver.job_failed = True
         self._editor.task_manager.add_coroutine(
             lambda ctx: driver.cancel(), key="cancel-job"
         )

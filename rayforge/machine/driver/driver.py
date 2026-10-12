@@ -338,6 +338,7 @@ class Driver(ABC):
         self.connection_status_changed = Signal()
         self.settings_read = Signal()
         self.job_finished = Signal()
+        self.job_failed = False
         self.probe_status_changed = Signal()
         self.wcs_updated = Signal()
         self.config_changed = Signal()

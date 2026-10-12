@@ -839,6 +839,47 @@ class TestMachineCmdJobDispatched:
         dispatch_spy.assert_not_called()
 
     @pytest.mark.asyncio
+    async def test_cancelled_send_does_not_dispatch(
+        self, machine_cmd, machine, job_artifact, dispatch_spy, mocker
+    ):
+        async def run_then_cancel(*args, **kwargs):
+            machine_cmd.cancel_job(machine)
+
+        mocker.patch.object(machine.driver, "run", side_effect=run_then_cancel)
+
+        await machine_cmd._run_send_action(job_artifact, machine, None)
+        await asyncio.sleep(0)
+
+        dispatch_spy.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_internal_driver_error_does_not_dispatch(
+        self, machine_cmd, machine, job_artifact, dispatch_spy, mocker
+    ):
+        async def run_swallowing_error(*args, **kwargs):
+            machine.driver.job_failed = True
+
+        mocker.patch.object(
+            machine.driver, "run", side_effect=run_swallowing_error
+        )
+
+        await machine_cmd._run_send_action(job_artifact, machine, None)
+        await asyncio.sleep(0)
+
+        dispatch_spy.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_stale_failure_flag_does_not_block_next_send(
+        self, machine_cmd, machine, job_artifact, dispatch_spy
+    ):
+        machine.driver.job_failed = True
+
+        await machine_cmd._run_send_action(job_artifact, machine, None)
+        await asyncio.sleep(0)
+
+        dispatch_spy.assert_called_once_with("send")
+
+    @pytest.mark.asyncio
     async def test_empty_job_does_not_dispatch(
         self, machine_cmd, machine, dispatch_spy
     ):

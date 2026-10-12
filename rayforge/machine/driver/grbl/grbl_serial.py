@@ -387,11 +387,13 @@ class GrblSerialDriver(Driver):
                 None if on_command_done is None else _on_command_done,
             )
         except DeviceConnectionError as e:
+            self.job_failed = True
             logger.warning(
                 f"Job terminated due to device error: {e}. "
                 "Connection remains active."
             )
         except Exception:
+            self.job_failed = True
             logger.exception("Job terminated with unexpected error")
 
     async def run_raw(self, machine_code: str) -> None:
