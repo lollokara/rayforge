@@ -676,3 +676,29 @@ def test_text_box_tool_draw_overlay_editing_state(text_box_tool, mock_element):
 
     ctx.save.assert_called()
     ctx.restore.assert_called()
+
+
+@pytest.mark.ui
+@pytest.mark.parametrize(
+    "style",
+    [
+        {"mirrored": True},
+        {"vertical": True},
+        {"rotation": 90.0},
+        {"reverse": True},
+        {"path_entity_id": 3},
+    ],
+)
+def test_click_keeps_caret_on_transformed_text(
+    text_box_tool, mock_element, style
+):
+    entity = TextBoxEntity(5, 1, 2, 3, "Hello", FontConfig())
+    entity.set_style(style)
+    mock_element.sketch.registry.get_entity = Mock(return_value=entity)
+    text_box_tool.editing_entity_id = 5
+    text_box_tool.text_buffer = "Hello"
+    text_box_tool.cursor_pos = 5
+
+    text_box_tool._update_cursor_from_click(0.0, 0.0)
+
+    assert text_box_tool.cursor_pos == 5

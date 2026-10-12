@@ -2,7 +2,7 @@ import logging
 import math
 from enum import Enum, auto
 from gettext import gettext as _
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import cairo
 from blinker import Signal
@@ -755,6 +755,18 @@ class TextBoxTool(SketchTool):
         if not isinstance(entity, TextBoxEntity):
             return
 
+        # shortcut: caret placement assumes plain left-to-right text
+        # along the width edge, upgrade when transformed text needs
+        # in-place caret positioning
+        if (
+            entity.mirrored
+            or entity.reverse
+            or entity.vertical
+            or entity.rotation
+            or entity.path_entity_id is not None
+        ):
+            return
+
         p_origin = self.element.sketch.registry.get_point(entity.origin_id)
         p_width = self.element.sketch.registry.get_point(entity.width_id)
         p_height = self.element.sketch.registry.get_point(entity.height_id)
@@ -831,7 +843,11 @@ class TextBoxTool(SketchTool):
         if self.live_edit_cmd is not None:
             self.live_edit_cmd.update_cursor(self.cursor_pos)
 
-    def apply_font_change(self, new_font_config: FontConfig) -> bool:
+    def apply_font_change(
+        self,
+        new_font_config: FontConfig,
+        new_style: dict[str, Any] | None = None,
+    ) -> bool:
         """Applies a font change during an active edit session.
 
         The live resize performed while typing mutates point positions and
@@ -861,6 +877,9 @@ class TextBoxTool(SketchTool):
         entity.font_config = new_font_config
         self._edit_cmd.new_font_config = new_font_config
         self._edit_cmd.new_content = self.text_buffer
+        if new_style is not None:
+            entity.set_style(new_style)
+            self._edit_cmd.new_style = new_style
         self._resize_box_to_fit_text()
 
         if self.live_edit_cmd:

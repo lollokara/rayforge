@@ -1,12 +1,12 @@
 import logging
 from gettext import gettext as _
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from gi.repository import Adw, Gtk, Pango
 from raygeo.geo.shape.text import FontConfig
 
 from rayforge.ui_gtk.icons import get_icon
-from rayforge.ui_gtk.shared.pref_rows import SpinRow
+from rayforge.ui_gtk.shared.pref_rows import AngleSpinRow, SpinRow
 
 from ..core.commands.text_property import (
     ModifyTextPropertyCommand,
@@ -85,6 +85,35 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         self.italic_switch = italic_switch
         self.add(self.italic_row)
 
+        self.mirror_switch = self._add_switch_row(
+            _("Mirror"), self._on_style_changed
+        )
+        self.reverse_switch = self._add_switch_row(
+            _("Reverse Characters"), self._on_style_changed
+        )
+        self.vertical_switch = self._add_switch_row(
+            _("Vertical"), self._on_style_changed
+        )
+        self.upside_down_switch = self._add_switch_row(
+            _("Upside Down"), self._on_upside_down_changed
+        )
+
+        self.rotation_row = AngleSpinRow(_("Rotation"))
+        self.rotation_row.value_changed.connect(self._on_style_changed)
+        self.add(self.rotation_row)
+
+    def _add_switch_row(self, title: str, handler) -> Gtk.Switch:
+        """Adds an action row with a switch and returns the switch."""
+        row = Adw.ActionRow()
+        row.set_title(title)
+        switch = Gtk.Switch()
+        switch.set_valign(Gtk.Align.CENTER)
+        switch.connect("state-set", handler)
+        row.add_suffix(switch)
+        row.set_activatable_widget(switch)
+        self.add(row)
+        return switch
+
     def set_text_entity(self, entity_id: int | None):
         """
         Sets the text entity to display font properties for.
@@ -108,6 +137,7 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
 
         self.set_visible(True)
         self._update_ui_from_model(entity.font_config)
+        self._update_style_ui(entity)
 
     def _update_ui_from_model(self, font_config: FontConfig):
         """Updates the UI widgets from the font configuration."""
@@ -129,6 +159,44 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             bold=self.bold_switch.get_active(),
             italic=self.italic_switch.get_active(),
         )
+
+    def _update_style_ui(self, entity: TextBoxEntity):
+        """Updates the style widgets from the text entity."""
+        self._in_update = True
+        try:
+            self.mirror_switch.set_active(entity.mirrored)
+            self.reverse_switch.set_active(entity.reverse)
+            self.vertical_switch.set_active(entity.vertical)
+            self.rotation_row.set_value(entity.rotation)
+            self.upside_down_switch.set_active(entity.rotation == 180.0)
+        finally:
+            self._in_update = False
+
+    def _get_style_from_ui(self) -> dict[str, Any]:
+        """Collects the style values shown by the widget."""
+        return {
+            "mirrored": self.mirror_switch.get_active(),
+            "reverse": self.reverse_switch.get_active(),
+            "vertical": self.vertical_switch.get_active(),
+            "rotation": self.rotation_row.get_value(),
+        }
+
+    def _on_style_changed(self, *args):
+        """Handles a change of any style row."""
+        if self._in_update or self._text_entity_id is None:
+            return
+        self._apply_font_config()
+
+    def _on_upside_down_changed(self, switch, state):
+        """Maps the upside-down switch onto a 180 degree rotation."""
+        if self._in_update or self._text_entity_id is None:
+            return
+        self._in_update = True
+        try:
+            self.rotation_row.set_value(180.0 if state else 0.0)
+        finally:
+            self._in_update = False
+        self._apply_font_config()
 
     def _on_font_family_row_activated(self, row, *args):
         """Handles font family row activation to open font chooser."""
@@ -237,6 +305,7 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             return
 
         new_font_config = self._get_font_config_from_ui()
+        new_style = self._get_style_from_ui()
 
         # When the text box is being edited, fold the font change into the
         # active edit session instead of pushing a separate command: the
@@ -247,7 +316,7 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         if (
             text_tool
             and text_tool.editing_entity_id == self._text_entity_id
-            and text_tool.apply_font_change(new_font_config)
+            and text_tool.apply_font_change(new_font_config, new_style)
         ):
             return
 
@@ -256,5 +325,6 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             text_entity_id=self._text_entity_id,
             new_content=entity.content,
             new_font_config=new_font_config,
+            new_style=new_style,
         )
         self.editor.history_manager.execute(cmd)
