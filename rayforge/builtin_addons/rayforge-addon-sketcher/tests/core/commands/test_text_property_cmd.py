@@ -826,3 +826,56 @@ def test_create_box_transaction_undo_redo_no_duplicate_ids():
     history.redo()
     assert_no_duplicates()
     assert sketch.solve() is True
+
+
+def test_style_change_execute_and_undo(sketch_with_text_box):
+    sketch, tb_id = sketch_with_text_box
+    tb = sketch.registry.get_entity(tb_id)
+    cmd = ModifyTextPropertyCommand(
+        sketch,
+        tb_id,
+        tb.content,
+        tb.font_config,
+        new_style={"mirrored": True, "rotation": 90.0},
+    )
+
+    cmd.execute()
+    assert tb.mirrored is True
+    assert tb.rotation == 90.0
+
+    cmd.undo()
+    assert tb.mirrored is False
+    assert tb.rotation == 0.0
+
+
+def test_command_without_style_leaves_style_untouched(
+    sketch_with_text_box,
+):
+    sketch, tb_id = sketch_with_text_box
+    tb = sketch.registry.get_entity(tb_id)
+    tb.mirrored = True
+    cmd = ModifyTextPropertyCommand(sketch, tb_id, "Changed", tb.font_config)
+
+    cmd.execute()
+    assert tb.mirrored is True
+    cmd.undo()
+    assert tb.mirrored is True
+
+
+def test_style_change_redo_with_history_manager(sketch_with_text_box):
+    sketch, tb_id = sketch_with_text_box
+    tb = sketch.registry.get_entity(tb_id)
+    history = HistoryManager()
+    history.execute(
+        ModifyTextPropertyCommand(
+            sketch,
+            tb_id,
+            tb.content,
+            tb.font_config,
+            new_style={"vertical": True},
+        )
+    )
+    history.undo()
+    assert tb.vertical is False
+    history.redo()
+    assert tb.vertical is True
