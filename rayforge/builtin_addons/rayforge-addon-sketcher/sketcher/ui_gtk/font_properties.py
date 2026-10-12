@@ -6,7 +6,11 @@ from gi.repository import Adw, Gtk, Pango
 from raygeo.geo.shape.text import FontConfig
 
 from rayforge.ui_gtk.icons import get_icon
-from rayforge.ui_gtk.shared.pref_rows import AngleSpinRow, SpinRow
+from rayforge.ui_gtk.shared.pref_rows import (
+    AngleSpinRow,
+    LengthSpinRow,
+    SpinRow,
+)
 
 from ..core.commands.text_property import (
     ModifyTextPropertyCommand,
@@ -102,6 +106,19 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         self.rotation_row.value_changed.connect(self._on_style_changed)
         self.add(self.rotation_row)
 
+        self.knockout_switch = self._add_switch_row(
+            _("Knock-out"), self._on_style_changed
+        )
+
+        self.knockout_margin_row = LengthSpinRow(
+            _("Knock-out Margin"),
+            lower=0.0,
+            upper=1000.0,
+            value_in_base=2.0,
+        )
+        self.knockout_margin_row.value_changed.connect(self._on_style_changed)
+        self.add(self.knockout_margin_row)
+
     def _add_switch_row(self, title: str, handler) -> Gtk.Switch:
         """Adds an action row with a switch and returns the switch."""
         row = Adw.ActionRow()
@@ -169,6 +186,10 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             self.vertical_switch.set_active(entity.vertical)
             self.rotation_row.set_value(entity.rotation)
             self.upside_down_switch.set_active(entity.rotation == 180.0)
+            self.knockout_switch.set_active(entity.knockout)
+            self.knockout_margin_row.set_value_in_base_units(
+                entity.knockout_margin
+            )
         finally:
             self._in_update = False
 
@@ -179,6 +200,10 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             "reverse": self.reverse_switch.get_active(),
             "vertical": self.vertical_switch.get_active(),
             "rotation": self.rotation_row.get_value(),
+            "knockout": self.knockout_switch.get_active(),
+            "knockout_margin": (
+                self.knockout_margin_row.get_value_in_base_units()
+            ),
         }
 
     def _on_style_changed(self, *args):

@@ -80,3 +80,31 @@ def test_widget_shows_entity_style(widget_with_box):
     assert widget.vertical_switch.get_active() is True
     assert widget.upside_down_switch.get_active() is True
     assert widget.rotation_row.get_value() == 180.0
+
+
+@pytest.mark.ui
+def test_knockout_rows_apply_style(widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+
+    widget.knockout_switch.set_active(True)
+    widget.knockout_margin_row.set_value_in_base_units(3.0)
+    widget._on_style_changed()
+
+    assert entity.knockout is True
+    assert entity.knockout_margin == pytest.approx(3.0)
+
+
+@pytest.mark.ui
+def test_widget_shows_knockout_style(widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    sketch.registry.get_entity(tb_id).set_style(
+        {"knockout": True, "knockout_margin": 4.0}
+    )
+
+    widget.set_text_entity(tb_id)
+
+    assert widget.knockout_switch.get_active() is True
+    assert widget.knockout_margin_row.get_value_in_base_units() == (
+        pytest.approx(4.0)
+    )
