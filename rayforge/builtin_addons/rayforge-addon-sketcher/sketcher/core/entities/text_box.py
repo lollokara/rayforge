@@ -23,6 +23,44 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+STYLE_DEFAULTS: dict[str, Any] = {
+    "mirrored": False,
+    "reverse": False,
+    "vertical": False,
+    "rotation": 0.0,
+    "knockout": False,
+    "knockout_margin": 2.0,
+    "path_entity_id": None,
+    "path_side": "outside",
+    "path_align": "center",
+    "path_offset": 0.0,
+    "content_bottom": "",
+}
+
+_STYLE_CHOICES = {
+    "path_side": ("outside", "inside"),
+    "path_align": ("start", "center", "end"),
+}
+
+
+def _is_valid_style_value(key: str, value: Any) -> bool:
+    if key == "path_entity_id":
+        return value is None or (
+            isinstance(value, int) and not isinstance(value, bool)
+        )
+    if key in _STYLE_CHOICES:
+        return value in _STYLE_CHOICES[key]
+    default = STYLE_DEFAULTS[key]
+    if isinstance(default, bool):
+        return isinstance(value, bool)
+    if isinstance(default, float):
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+        )
+    return isinstance(value, str)
+
 
 class TextBoxEntity(Entity):
     def __init__(
@@ -46,6 +84,17 @@ class TextBoxEntity(Entity):
             construction_line_ids or []
         )
         self.fill_color: ColorRGBA | None = None
+        self.mirrored: bool = False
+        self.reverse: bool = False
+        self.vertical: bool = False
+        self.rotation: float = 0.0
+        self.knockout: bool = False
+        self.knockout_margin: float = 2.0
+        self.path_entity_id: EntityID | None = None
+        self.path_side: str = "outside"
+        self.path_align: str = "center"
+        self.path_offset: float = 0.0
+        self.content_bottom: str = ""
         self.type = "text_box"
 
     def get_point_ids(self) -> list[EntityID]:
@@ -68,6 +117,22 @@ class TextBoxEntity(Entity):
 
     def set_fill_color(self, color: ColorRGBA | None) -> None:
         self.fill_color = color
+
+    def get_style(self) -> dict[str, Any]:
+        """Returns every style attribute, keyed like STYLE_DEFAULTS."""
+        return {key: getattr(self, key) for key in STYLE_DEFAULTS}
+
+    def set_style(self, style: dict[str, Any]) -> None:
+        """Applies the known, valid entries of *style*; anything else
+        is ignored so stale or hand-edited data cannot break layout."""
+        for key, value in style.items():
+            if key not in STYLE_DEFAULTS:
+                continue
+            if not _is_valid_style_value(key, value):
+                continue
+            if isinstance(STYLE_DEFAULTS[key], float):
+                value = float(value)
+            setattr(self, key, value)
 
     def get_frame_polygon(
         self, registry: "EntityRegistry"
@@ -200,12 +265,16 @@ class TextBoxEntity(Entity):
         """Extends the point signature with the content and font,
         which shape the rendered glyphs without moving the frame."""
         font = self.font_config
-        return super().geometry_signature(registry) + (
-            self.content,
-            font.family,
-            font.size,
-            font.bold,
-            font.italic,
+        return (
+            super().geometry_signature(registry)
+            + (
+                self.content,
+                font.family,
+                font.size,
+                font.bold,
+                font.italic,
+            )
+            + tuple(self.get_style().values())
         )
 
     def rewrite_offsets_from(
@@ -218,6 +287,7 @@ class TextBoxEntity(Entity):
         self.content = template.content
         self.font_config = copy.deepcopy(template.font_config)
         self.fill_color = template.fill_color
+        self.set_style(template.get_style())
 
     def to_polylines(
         self,
@@ -372,6 +442,10 @@ class TextBoxEntity(Entity):
         )
         if self.fill_color is not None:
             data["fill_color"] = list(self.fill_color)
+        for key, default in STYLE_DEFAULTS.items():
+            value = getattr(self, key)
+            if value != default:
+                data[key] = value
         return data
 
     @classmethod
@@ -391,6 +465,7 @@ class TextBoxEntity(Entity):
             construction_line_ids=data.get("construction_line_ids"),
         )
         entity.fill_color = fill_color
+        entity.set_style(data)
         return entity
 
     def __repr__(self) -> str:

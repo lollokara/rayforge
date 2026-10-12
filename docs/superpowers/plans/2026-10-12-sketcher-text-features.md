@@ -219,7 +219,7 @@ Parallel-safe with: Task 1, 8, 12, 18, 19, 20
 
 - Consumes: nothing new.
 - Produces (in `sketcher.core.entities.text_box`):
-  - `STYLE_DEFAULTS: dict[str, Any]` with keys `mirror` (bool, False),
+  - `STYLE_DEFAULTS: dict[str, Any]` with keys `mirrored` (bool, False),
   `reverse` (bool, False), `vertical` (bool, False), `rotation` (float
   degrees, 0.0), `knockout` (bool, False), `knockout_margin` (float mm,
   2.0), `path_entity_id` (`int | None`, None), `path_side` (`"outside"` |
@@ -238,7 +238,7 @@ Append to `SKT/core/entities/test_text_box_entity.py`, and add
 
 ```python
 _NON_DEFAULT_STYLE = {
-    "mirror": True,
+    "mirrored": True,
     "reverse": True,
     "vertical": True,
     "rotation": 90.0,
@@ -286,7 +286,7 @@ def test_from_dict_ignores_invalid_style_values():
     data.update(
         {
             "rotation": "abc",
-            "mirror": 1,
+            "mirrored": 1,
             "path_side": "sideways",
             "path_entity_id": "7",
             "knockout_margin": float("nan"),
@@ -306,13 +306,13 @@ def test_set_style_coerces_int_to_float():
 def test_style_changes_geometry_signature(registry):
     box = _make_text_box(registry)
     before = box.geometry_signature(registry)
-    box.mirror = True
+    box.mirrored = True
     assert box.geometry_signature(registry) != before
 
 
 def test_rewrite_offsets_copies_style(registry):
     template = _make_text_box(registry)
-    template.set_style({"mirror": True, "rotation": 45.0})
+    template.set_style({"mirrored": True, "rotation": 45.0})
     copy_box = _make_text_box(registry, "Other")
     copy_box.rewrite_offsets_from(template, Mock())
     assert copy_box.get_style() == template.get_style()
@@ -330,7 +330,7 @@ add:
 
 ```python
 STYLE_DEFAULTS: dict[str, Any] = {
-    "mirror": False,
+    "mirrored": False,
     "reverse": False,
     "vertical": False,
     "rotation": 0.0,
@@ -371,7 +371,7 @@ def _is_valid_style_value(key: str, value: Any) -> bool:
 In `__init__`, after `self.fill_color: ColorRGBA | None = None` add:
 
 ```python
-        self.mirror: bool = False
+        self.mirrored: bool = False
         self.reverse: bool = False
         self.vertical: bool = False
         self.rotation: float = 0.0
@@ -491,15 +491,15 @@ def test_style_change_execute_and_undo(sketch_with_text_box):
         tb_id,
         tb.content,
         tb.font_config,
-        new_style={"mirror": True, "rotation": 90.0},
+        new_style={"mirrored": True, "rotation": 90.0},
     )
 
     cmd.execute()
-    assert tb.mirror is True
+    assert tb.mirrored is True
     assert tb.rotation == 90.0
 
     cmd.undo()
-    assert tb.mirror is False
+    assert tb.mirrored is False
     assert tb.rotation == 0.0
 
 
@@ -508,15 +508,15 @@ def test_command_without_style_leaves_style_untouched(
 ):
     sketch, tb_id = sketch_with_text_box
     tb = sketch.registry.get_entity(tb_id)
-    tb.mirror = True
+    tb.mirrored = True
     cmd = ModifyTextPropertyCommand(
         sketch, tb_id, "Changed", tb.font_config
     )
 
     cmd.execute()
-    assert tb.mirror is True
+    assert tb.mirrored is True
     cmd.undo()
-    assert tb.mirror is True
+    assert tb.mirrored is True
 
 
 def test_style_change_redo_with_history_manager(sketch_with_text_box):
@@ -689,7 +689,7 @@ def test_default_style_matches_plain_layout(registry):
 
 def test_mirror_reflects_about_frame_centre(registry):
     plain, width, _ = _natural_box(registry, "L")
-    mirrored, _, _ = _natural_box(registry, "L", mirror=True)
+    mirrored, _, _ = _natural_box(registry, "L", mirrored=True)
     r0 = plain.to_geometry(registry).rect()
     r1 = mirrored.to_geometry(registry).rect()
     assert r1[0] == pytest.approx(width - r0[2], abs=1e-6)
@@ -753,7 +753,7 @@ def test_blank_content_with_all_flags_does_not_raise(registry):
         registry.add_text_box(p1, p2, p3, " ", FontConfig())
     )
     box.set_style(
-        {"mirror": True, "reverse": True, "vertical": True, "rotation": 30.0}
+        {"mirrored": True, "reverse": True, "vertical": True, "rotation": 30.0}
     )
     assert isinstance(box.to_geometry(registry), Geometry)
     assert box.get_natural_size()[0] >= 1.0
@@ -825,7 +825,7 @@ Add these methods directly after `get_natural_size`:
             _, min_y, _, max_y = geo.rect()
             width = self.font_config.get_text_width(text) or 1.0
             height = max_y - min_y
-        if self.mirror:
+        if self.mirrored:
             geo.transform(
                 Matrix.scale(-1.0, 1.0, center=(width / 2.0, 0.0))
             )
@@ -969,11 +969,11 @@ def test_transform_rows_apply_style(widget_with_box):
     widget.rotation_row.set_value(90.0)
     widget._on_style_changed()
 
-    assert entity.mirror is True
+    assert entity.mirrored is True
     assert entity.rotation == 90.0
 
     widget.editor.history_manager.undo()
-    assert entity.mirror is False
+    assert entity.mirrored is False
     assert entity.rotation == 0.0
 
 
@@ -1011,7 +1011,7 @@ are not there yet):
 @pytest.mark.parametrize(
     "style",
     [
-        {"mirror": True},
+        {"mirrored": True},
         {"vertical": True},
         {"rotation": 90.0},
         {"reverse": True},
@@ -1108,7 +1108,7 @@ After `_get_font_config_from_ui` add:
         """Updates the style widgets from the text entity."""
         self._in_update = True
         try:
-            self.mirror_switch.set_active(entity.mirror)
+            self.mirror_switch.set_active(entity.mirrored)
             self.reverse_switch.set_active(entity.reverse)
             self.vertical_switch.set_active(entity.vertical)
             self.rotation_row.set_value(entity.rotation)
@@ -1119,7 +1119,7 @@ After `_get_font_config_from_ui` add:
     def _get_style_from_ui(self) -> dict[str, Any]:
         """Collects the style values shown by the widget."""
         return {
-            "mirror": self.mirror_switch.get_active(),
+            "mirrored": self.mirror_switch.get_active(),
             "reverse": self.reverse_switch.get_active(),
             "vertical": self.vertical_switch.get_active(),
             "rotation": self.rotation_row.get_value(),
@@ -1192,7 +1192,7 @@ add:
         # along the width edge, upgrade when transformed text needs
         # in-place caret positioning
         if (
-            entity.mirror
+            entity.mirrored
             or entity.reverse
             or entity.vertical
             or entity.rotation
@@ -2176,7 +2176,7 @@ Parallel-safe with: Task 3, 5, 7, 8, 12, 16, 18, 19, 20, 21
   - `TextBoxEntity._glyphs(registry, text) -> Geometry`: path layout when
   bound, frame layout otherwise.
   - Path-bound text honours `reverse`, `path_side`, `path_align`,
-  `path_offset` and, on a circle, `content_bottom`. It ignores `mirror`,
+  `path_offset` and, on a circle, `content_bottom`. It ignores `mirrored`,
   `vertical`, `rotation` and `knockout`, and uses the natural font size
   instead of the frame.
   - `get_point_ids()` is unchanged: path points are not text box points.
@@ -3737,7 +3737,7 @@ def _styled_box():
     )
     box.set_style(
         {
-            "mirror": True,
+            "mirrored": True,
             "rotation": 90.0,
             "knockout": True,
             "knockout_margin": 3.0,
@@ -3762,7 +3762,7 @@ def test_preset_round_trip():
     assert preset.font_config() == FontConfig(
         family="serif", size=14.0, bold=True
     )
-    assert preset.style["mirror"] is True
+    assert preset.style["mirrored"] is True
     assert preset.style["rotation"] == 90.0
     assert preset.style["path_side"] == "inside"
 
@@ -3821,7 +3821,7 @@ def test_unknown_keys_and_bad_entries_are_ignored():
                     {
                         "name": "Good",
                         "font": FontConfig().to_dict(),
-                        "style": {"mirror": True, "bogus": 1},
+                        "style": {"mirrored": True, "bogus": 1},
                         "future": "field",
                     },
                     {"font": {}},
@@ -3833,7 +3833,7 @@ def test_unknown_keys_and_bad_entries_are_ignored():
     )
     (preset,) = load_presets()
     assert preset.name == "Good"
-    assert preset.style == {"mirror": True}
+    assert preset.style == {"mirrored": True}
 
 
 def test_save_leaves_no_temp_file(data_dir):
@@ -4021,7 +4021,7 @@ def preset_data_dir(tmp_path, monkeypatch):
 @pytest.mark.ui
 def test_save_preset_from_current_text(preset_data_dir, widget_with_box):
     widget, sketch, tb_id = widget_with_box
-    sketch.registry.get_entity(tb_id).set_style({"mirror": True})
+    sketch.registry.get_entity(tb_id).set_style({"mirrored": True})
     widget.set_text_entity(tb_id)
 
     widget.save_preset_row.set_text("Mirrored")
@@ -4029,7 +4029,7 @@ def test_save_preset_from_current_text(preset_data_dir, widget_with_box):
 
     (preset,) = text_presets.load_presets()
     assert preset.name == "Mirrored"
-    assert preset.style["mirror"] is True
+    assert preset.style["mirrored"] is True
     assert widget.save_preset_row.get_text() == ""
 
 

@@ -1,7 +1,10 @@
+from unittest.mock import Mock
+
 import pytest
 from raygeo.geo import Geometry
 from raygeo.geo.shape.text import FontConfig
 from sketcher.core.entities import TextBoxEntity
+from sketcher.core.entities.text_box import STYLE_DEFAULTS
 from sketcher.core.registry import EntityRegistry
 
 
@@ -378,3 +381,84 @@ def test_serialization_preserves_template(registry):
 
     restored = TextBoxEntity.from_dict(data)
     assert restored.content == "Part {width:.1f}x{height:.1f}"
+
+
+_NON_DEFAULT_STYLE = {
+    "mirrored": True,
+    "reverse": True,
+    "vertical": True,
+    "rotation": 90.0,
+    "knockout": True,
+    "knockout_margin": 3.5,
+    "path_entity_id": 42,
+    "path_side": "inside",
+    "path_align": "start",
+    "path_offset": 1.5,
+    "content_bottom": "BOTTOM",
+}
+
+
+def test_style_defaults():
+    box = TextBoxEntity(1, 2, 3, 4, "x")
+    assert box.get_style() == STYLE_DEFAULTS
+
+
+def test_style_defaults_are_not_serialized():
+    data = TextBoxEntity(1, 2, 3, 4, "x").to_dict()
+    assert not set(STYLE_DEFAULTS) & set(data)
+
+
+def test_style_round_trip():
+    box = TextBoxEntity(1, 2, 3, 4, "x")
+    box.set_style(_NON_DEFAULT_STYLE)
+    restored = TextBoxEntity.from_dict(box.to_dict())
+    assert restored.get_style() == _NON_DEFAULT_STYLE
+
+
+def test_from_dict_without_style_keys_loads_defaults():
+    data = {
+        "id": 1,
+        "type": "text_box",
+        "origin_id": 2,
+        "width_id": 3,
+        "height_id": 4,
+        "content": "legacy",
+    }
+    assert TextBoxEntity.from_dict(data).get_style() == STYLE_DEFAULTS
+
+
+def test_from_dict_ignores_invalid_style_values():
+    data = TextBoxEntity(1, 2, 3, 4, "x").to_dict()
+    data.update(
+        {
+            "rotation": "abc",
+            "mirrored": 1,
+            "path_side": "sideways",
+            "path_entity_id": "7",
+            "knockout_margin": float("nan"),
+            "content_bottom": 5,
+        }
+    )
+    assert TextBoxEntity.from_dict(data).get_style() == STYLE_DEFAULTS
+
+
+def test_set_style_coerces_int_to_float():
+    box = TextBoxEntity(1, 2, 3, 4, "x")
+    box.set_style({"rotation": 180})
+    assert box.rotation == 180.0
+    assert isinstance(box.rotation, float)
+
+
+def test_style_changes_geometry_signature(registry):
+    box = _make_text_box(registry)
+    before = box.geometry_signature(registry)
+    box.mirrored = True
+    assert box.geometry_signature(registry) != before
+
+
+def test_rewrite_offsets_copies_style(registry):
+    template = _make_text_box(registry)
+    template.set_style({"mirrored": True, "rotation": 45.0})
+    copy_box = _make_text_box(registry, "Other")
+    copy_box.rewrite_offsets_from(template, Mock())
+    assert copy_box.get_style() == template.get_style()
