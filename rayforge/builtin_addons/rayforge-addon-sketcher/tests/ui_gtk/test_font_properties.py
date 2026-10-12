@@ -14,7 +14,10 @@ if sys.platform.startswith("linux"):
 
 from raygeo.geo.shape.text import FontConfig
 from sketcher.core import Sketch
-from sketcher.ui_gtk.font_properties import FontPropertiesWidget
+from sketcher.ui_gtk.font_properties import (
+    FontPropertiesWidget,
+    split_text_selection,
+)
 
 from rayforge.core.undo import HistoryManager
 
@@ -108,3 +111,59 @@ def test_widget_shows_knockout_style(widget_with_box):
     assert widget.knockout_margin_row.get_value_in_base_units() == (
         pytest.approx(4.0)
     )
+
+
+@pytest.mark.ui
+def test_split_text_selection(widget_with_box):
+    _, sketch, tb_id = widget_with_box
+    registry = sketch.registry
+    p1 = sketch.add_point(0, 50)
+    p2 = sketch.add_point(100, 50)
+    line_id = sketch.add_line(p1, p2)
+    other_line = sketch.add_line(p2, sketch.add_point(100, 90))
+
+    assert split_text_selection(registry, [tb_id]) == (tb_id, None)
+    assert split_text_selection(registry, [line_id, tb_id]) == (
+        tb_id,
+        line_id,
+    )
+    assert split_text_selection(registry, [line_id]) == (None, None)
+    assert split_text_selection(registry, [tb_id, line_id, other_line]) == (
+        None,
+        None,
+    )
+    assert split_text_selection(registry, []) == (None, None)
+
+
+@pytest.mark.ui
+def test_follow_path_binds_and_releases(widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+    line_id = sketch.add_line(
+        sketch.add_point(0, 50), sketch.add_point(100, 50)
+    )
+
+    widget.set_text_entity(tb_id, line_id)
+    widget._on_follow_path_activated(widget.follow_path_row)
+    assert entity.path_entity_id == line_id
+
+    widget.set_text_entity(tb_id)
+    widget._on_follow_path_activated(widget.follow_path_row)
+    assert entity.path_entity_id is None
+
+
+@pytest.mark.ui
+def test_path_rows_apply_style(widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+
+    widget.path_side_row.set_selected(1)
+    widget.path_align_row.set_selected(0)
+    widget.path_offset_row.set_value_in_base_units(2.5)
+    widget.bottom_text_row.set_text("BOTTOM")
+    widget._on_style_changed()
+
+    assert entity.path_side == "inside"
+    assert entity.path_align == "start"
+    assert entity.path_offset == pytest.approx(2.5)
+    assert entity.content_bottom == "BOTTOM"

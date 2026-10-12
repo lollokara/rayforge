@@ -15,12 +15,41 @@ from rayforge.ui_gtk.shared.pref_rows import (
 from ..core.commands.text_property import (
     ModifyTextPropertyCommand,
 )
+from ..core.entities import Arc, Bezier, Circle, Line
 from ..core.entities.text_box import TextBoxEntity
 
 if TYPE_CHECKING:
     from .editor import SketchEditor
 
 logger = logging.getLogger(__name__)
+
+_PATH_SIDES = ("outside", "inside")
+_PATH_ALIGNS = ("start", "center", "end")
+
+
+def split_text_selection(
+    registry, entity_ids
+) -> tuple[int | None, int | None]:
+    """
+    Splits a selection into (text box id, path candidate id).
+
+    A text box id is returned when the selection is exactly one text
+    box, optionally together with exactly one line, arc, circle or
+    bezier the text could follow.
+    """
+    text_ids = []
+    path_ids = []
+    for entity_id in entity_ids:
+        entity = registry.get_entity(entity_id)
+        if isinstance(entity, TextBoxEntity):
+            text_ids.append(entity_id)
+        elif isinstance(entity, (Line, Arc, Circle, Bezier)):
+            path_ids.append(entity_id)
+        else:
+            return None, None
+    if len(text_ids) != 1 or len(path_ids) > 1:
+        return None, None
+    return text_ids[0], path_ids[0] if path_ids else None
 
 
 class FontPropertiesWidget(Adw.PreferencesGroup):
@@ -35,6 +64,8 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         self._text_entity_id: int | None = None
         self._in_update = False
         self._current_font_family = "sans-serif"
+        self._path_candidate_id: int | None = None
+        self._path_entity_id: int | None = None
 
         self.set_title(_("Font Properties"))
         self.set_description(
@@ -119,6 +150,45 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         self.knockout_margin_row.value_changed.connect(self._on_style_changed)
         self.add(self.knockout_margin_row)
 
+        self.follow_path_row = Adw.ActionRow()
+        self.follow_path_row.set_title(_("Follow Path"))
+        self.follow_path_row.set_activatable(True)
+        self.follow_path_row.connect(
+            "activated", self._on_follow_path_activated
+        )
+        self.add(self.follow_path_row)
+
+        self.path_side_row = Adw.ComboRow()
+        self.path_side_row.set_title(_("Path Side"))
+        self.path_side_row.set_model(
+            Gtk.StringList.new([_("Outside"), _("Inside")])
+        )
+        self.path_side_row.connect("notify::selected", self._on_style_changed)
+        self.add(self.path_side_row)
+
+        self.path_align_row = Adw.ComboRow()
+        self.path_align_row.set_title(_("Path Alignment"))
+        self.path_align_row.set_model(
+            Gtk.StringList.new([_("Start"), _("Center"), _("End")])
+        )
+        self.path_align_row.connect("notify::selected", self._on_style_changed)
+        self.add(self.path_align_row)
+
+        self.path_offset_row = LengthSpinRow(
+            _("Path Offset"),
+            lower=-10000.0,
+            upper=10000.0,
+            value_in_base=0.0,
+        )
+        self.path_offset_row.value_changed.connect(self._on_style_changed)
+        self.add(self.path_offset_row)
+
+        self.bottom_text_row = Adw.EntryRow()
+        self.bottom_text_row.set_title(_("Bottom Text"))
+        self.bottom_text_row.set_show_apply_button(True)
+        self.bottom_text_row.connect("apply", self._on_style_changed)
+        self.add(self.bottom_text_row)
+
     def _add_switch_row(self, title: str, handler) -> Gtk.Switch:
         """Adds an action row with a switch and returns the switch."""
         row = Adw.ActionRow()
@@ -131,12 +201,16 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         self.add(row)
         return switch
 
-    def set_text_entity(self, entity_id: int | None):
+    def set_text_entity(
+        self, entity_id: int | None, path_candidate_id: int | None = None
+    ):
         """
         Sets the text entity to display font properties for.
-        Hides the widget if entity_id is None.
+        Hides the widget if entity_id is None. *path_candidate_id* is
+        a selected line, arc, circle or bezier the text could follow.
         """
         self._text_entity_id = entity_id
+        self._path_candidate_id = path_candidate_id
 
         if entity_id is None:
             self.set_visible(False)
@@ -190,6 +264,16 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             self.knockout_margin_row.set_value_in_base_units(
                 entity.knockout_margin
             )
+            self._path_entity_id = entity.path_entity_id
+            self.path_side_row.set_selected(
+                _PATH_SIDES.index(entity.path_side)
+            )
+            self.path_align_row.set_selected(
+                _PATH_ALIGNS.index(entity.path_align)
+            )
+            self.path_offset_row.set_value_in_base_units(entity.path_offset)
+            self.bottom_text_row.set_text(entity.content_bottom)
+            self._update_follow_path_subtitle()
         finally:
             self._in_update = False
 
@@ -204,6 +288,11 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             "knockout_margin": (
                 self.knockout_margin_row.get_value_in_base_units()
             ),
+            "path_entity_id": self._path_entity_id,
+            "path_side": _PATH_SIDES[self.path_side_row.get_selected()],
+            "path_align": _PATH_ALIGNS[self.path_align_row.get_selected()],
+            "path_offset": self.path_offset_row.get_value_in_base_units(),
+            "content_bottom": self.bottom_text_row.get_text(),
         }
 
     def _on_style_changed(self, *args):
@@ -221,6 +310,27 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             self.rotation_row.set_value(180.0 if state else 0.0)
         finally:
             self._in_update = False
+        self._apply_font_config()
+
+    def _update_follow_path_subtitle(self):
+        """Explains what activating the follow-path row will do."""
+        if self._path_candidate_id is not None:
+            subtitle = _("Bind the text to the selected shape")
+        elif self._path_entity_id is not None:
+            subtitle = _("Following a path. Activate to release")
+        else:
+            subtitle = _(
+                "Select the text box together with a line, arc, "
+                "circle or curve"
+            )
+        self.follow_path_row.set_subtitle(subtitle)
+
+    def _on_follow_path_activated(self, row, *args):
+        """Binds the text to the selected shape, or releases it."""
+        if self._in_update or self._text_entity_id is None:
+            return
+        self._path_entity_id = self._path_candidate_id
+        self._update_follow_path_subtitle()
         self._apply_font_config()
 
     def _on_font_family_row_activated(self, row, *args):
