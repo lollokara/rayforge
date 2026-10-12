@@ -1,7 +1,7 @@
 import copy
 import logging
 import math
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import TYPE_CHECKING, Any
 
 from raygeo.geo import Geometry, Matrix
@@ -53,6 +53,15 @@ _STYLE_CHOICES = {
 _PATH_ENTITY_TYPES = (Line, Arc, Circle, Bezier)
 _PATH_TOLERANCE = 0.02
 _CIRCLE_SEGMENTS = 96
+
+
+def _reversed_indices(
+    keep: Collection[int] | None, length: int
+) -> set[int] | None:
+    """Maps character indices of a text to those of its reverse."""
+    if keep is None:
+        return None
+    return {length - 1 - i for i in keep}
 
 
 def _is_valid_style_value(key: str, value: Any) -> bool:
@@ -211,7 +220,7 @@ class TextBoxEntity(Entity):
         Returns the natural (width, height) of the text content.
 
         If *content* is omitted, uses ``self.content``. An empty or
-        None content yields a minimum width of 10.
+        None content yields the size of a single placeholder "H".
 
         The height is derived from the actual geometry bounding box
         so the frame matches the ink extent exactly and map_to_frame
@@ -220,32 +229,68 @@ class TextBoxEntity(Entity):
         text = content if content is not None else self.content
 
         if not text:
-            return 10.0, self.font_config.size
+            return self.placeholder_size()
 
         _, width, _, height = self._natural_layout(text)
         return max(width, 1.0), max(height, 1.0)
 
+    def placeholder_size(self) -> tuple[float, float]:
+        """Returns the measured (width, height) of a single "H" at the
+        entity's font, the size of an empty text box."""
+        min_x, min_y, max_x, max_y = text_to_geometry(
+            "H", font_config=self.font_config
+        ).rect()
+        return max_x - min_x, max_y - min_y
+
+    def is_plain_layout(self) -> bool:
+        """True when the text is laid out left to right in the frame,
+        without mirror, reverse, vertical, rotation or path."""
+        return not (
+            self.mirrored
+            or self.reverse
+            or self.vertical
+            or self.rotation
+            or self.path_entity_id is not None
+        )
+
     def _vertical_layout(
-        self, text: str
+        self, text: str, keep: Collection[int] | None = None
     ) -> tuple[Geometry, float, float, float]:
         """Stacks upright characters top to bottom, each centred on
-        the column."""
+        the column. Metrics always come from the full text; *keep*
+        restricts the returned geometry to those character indices."""
         font = self.font_config
         line_height = font.get_font_metrics()[2] or font.size
         column = (
             max((font.get_text_width(ch) for ch in text), default=0.0) or 1.0
         )
         geo = Geometry()
+        part = Geometry()
         for i, ch in enumerate(text):
             glyph = text_to_geometry(ch, font_config=font)
             dx = (column - font.get_text_width(ch)) / 2.0
             glyph.transform(Matrix.translation(dx, -i * line_height))
             geo.extend(glyph)
+            if keep is None or i in keep:
+                part.extend(glyph)
         _, min_y, _, max_y = geo.rect()
-        return geo, column, min_y, max_y - min_y
+        return (geo if keep is None else part), column, min_y, max_y - min_y
+
+    def _horizontal_layout(self, text: str, keep: Collection[int]) -> Geometry:
+        """The glyphs of the *keep* indices at the advance positions
+        they have in the full *text* (raygeo applies no kerning)."""
+        font = self.font_config
+        part = Geometry()
+        for i in sorted(keep):
+            glyph = text_to_geometry(text[i], font_config=font)
+            glyph.transform(
+                Matrix.translation(font.get_text_position(text, i), 0.0)
+            )
+            part.extend(glyph)
+        return part
 
     def _natural_layout(
-        self, text: str
+        self, text: str, keep: Collection[int] | None = None
     ) -> tuple[Geometry, float, float, float]:
         """
         Lays *text* out in natural space (mm, Y up, baseline origin)
@@ -253,16 +298,23 @@ class TextBoxEntity(Entity):
 
         Returns (geometry, width, min_y, height); width is the advance
         width (or the column width for vertical text).
+
+        When *keep* is given, only the characters at those indices of
+        the original *text* are returned, positioned exactly as in the
+        full layout.
         """
         if self.reverse:
             text = text[::-1]
+            keep = _reversed_indices(keep, len(text))
         if self.vertical:
-            geo, width, min_y, height = self._vertical_layout(text)
+            geo, width, min_y, height = self._vertical_layout(text, keep)
         else:
             geo = text_to_geometry(text, font_config=self.font_config)
             _, min_y, _, max_y = geo.rect()
             width = self.font_config.get_text_width(text) or 1.0
             height = max_y - min_y
+            if keep is not None:
+                geo = self._horizontal_layout(text, keep)
         if self.mirrored:
             geo.transform(Matrix.scale(-1.0, 1.0, center=(width / 2.0, 0.0)))
         return geo, width, min_y, height
@@ -280,11 +332,16 @@ class TextBoxEntity(Entity):
         )
         return Matrix.rotation(self.rotation, center=centre)
 
-    def _frame_glyphs(self, registry: "EntityRegistry", text: str) -> Geometry:
+    def _frame_glyphs(
+        self,
+        registry: "EntityRegistry",
+        text: str,
+        keep: Collection[int] | None = None,
+    ) -> Geometry:
         """Maps the natural layout into the frame, then rotates it
         about the frame centre."""
         origin, pw, ph = self._build_frame_for_content(registry, text)
-        geo, width, min_y, height = self._natural_layout(text)
+        geo, width, min_y, height = self._natural_layout(text, keep)
         geo = geo.map_to_frame(
             origin,
             pw,
@@ -343,9 +400,11 @@ class TextBoxEntity(Entity):
         registry: "EntityRegistry",
         text: str,
         polyline: list[tuple[float, float]],
+        keep: Collection[int] | None = None,
     ) -> Geometry:
         if self.reverse:
             text = text[::-1]
+            keep = _reversed_indices(keep, len(text))
         geo = text_on_path(
             text,
             self.font_config,
@@ -353,13 +412,18 @@ class TextBoxEntity(Entity):
             self.path_side,
             self.path_align,
             self.path_offset,
+            keep,
         )
         path_entity = (
             registry.get_entity(self.path_entity_id)
             if self.path_entity_id is not None
             else None
         )
-        if self.content_bottom and isinstance(path_entity, Circle):
+        if (
+            keep is None
+            and self.content_bottom
+            and isinstance(path_entity, Circle)
+        ):
             geo.extend(
                 text_on_path(
                     self.content_bottom,
@@ -372,13 +436,19 @@ class TextBoxEntity(Entity):
             )
         return geo
 
-    def _glyphs(self, registry: "EntityRegistry", text: str) -> Geometry:
+    def _glyphs(
+        self,
+        registry: "EntityRegistry",
+        text: str,
+        keep: Collection[int] | None = None,
+    ) -> Geometry:
         """Glyph outlines on the bound path, or in the frame when the
-        text box follows no path."""
+        text box follows no path. *keep* restricts them to the
+        characters at those indices."""
         polyline = self.get_path_polyline(registry)
         if polyline is None:
-            return self._frame_glyphs(registry, text)
-        return self._path_glyphs(registry, text, polyline)
+            return self._frame_glyphs(registry, text, keep)
+        return self._path_glyphs(registry, text, polyline, keep)
 
     def get_plate_ring(
         self, registry: "EntityRegistry"
@@ -641,6 +711,26 @@ class TextBoxEntity(Entity):
         plate = rings_to_geometry([ring])
         plate.extend(glyphs)
         return plate
+
+    def to_dynamic_geometry(
+        self,
+        registry: "EntityRegistry",
+        segments: Sequence[tuple[str, bool]],
+    ) -> Geometry:
+        """Final geometry of only the characters of the dynamic
+        *segments*, laid out and transformed exactly like the glyphs
+        of ``to_geometry`` for the joined text, so it overlays them.
+        For on-screen highlighting only."""
+        text = "".join(piece for piece, _ in segments)
+        keep: set[int] = set()
+        pos = 0
+        for piece, is_dynamic in segments:
+            if is_dynamic:
+                keep.update(range(pos, pos + len(piece)))
+            pos += len(piece)
+        if not keep:
+            return Geometry()
+        return self._glyphs(registry, text, keep)
 
     def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()

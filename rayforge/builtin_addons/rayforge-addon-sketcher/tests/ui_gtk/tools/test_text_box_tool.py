@@ -2,6 +2,7 @@ from typing import cast
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from raygeo.geo import Geometry
 from raygeo.geo.shape.text import FontConfig
 from sketcher.core import Sketch
 from sketcher.core.commands import TextBoxCommand
@@ -656,6 +657,13 @@ def test_text_box_tool_draw_overlay_editing_state(text_box_tool, mock_element):
     )
     mock_entity.get_font_metrics = Mock(return_value=(10.0, -2.0, 12.0))
 
+    mock_entity.is_plain_layout.return_value = True
+    mock_entity.to_geometry.return_value = Geometry()
+    mock_entity.to_dynamic_geometry.return_value = Geometry()
+
+    mock_element.sketch.resolve_content_segments.return_value = [
+        ("Test", False)
+    ]
     mock_element.sketch.registry.get_entity = Mock(return_value=mock_entity)
     mock_element.sketch.registry.get_point.side_effect = [
         Mock(x=0, y=0),

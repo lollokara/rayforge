@@ -34,6 +34,7 @@ from ..core.entities import (
 from ..core.sketch import FillStyle
 from ..core.types import EntityID
 from .tools import PathTool, TextBoxTool
+from .tools.text_box_tool import DYNAMIC_TEXT_COLOR
 
 if TYPE_CHECKING:
     from .sketchelement import SketchElement
@@ -307,7 +308,10 @@ class SketchRenderer:
                 and entity.fill_color is not None
             ):
                 text_geo = entity.to_fill_geometry(
-                    self.element.sketch.registry
+                    self.element.sketch.registry,
+                    resolved_content=self.element.sketch._resolve_text_content(
+                        entity
+                    ),
                 )
                 if text_geo:
                     ctx.new_path()
@@ -414,6 +418,7 @@ class SketchRenderer:
                         is_sketch_fully_constrained,
                     )
                 ctx.fill()
+                self._draw_dynamic_text(ctx, entity)
             elif entity.construction:
                 scale = self.element.line_width / base_line_width
                 ctx.set_dash([5.0 / scale, 5.0 / scale])
@@ -593,10 +598,30 @@ class SketchRenderer:
         if not (p_origin and p_width and p_height):
             return False
 
+        sketch = self.element.sketch
         geometry_to_cairo(
-            entity.to_geometry(self.element.sketch.registry), ctx
+            entity.to_geometry(
+                sketch.registry,
+                resolved_content=sketch._resolve_text_content(entity),
+            ),
+            ctx,
         )
         return True
+
+    def _draw_dynamic_text(
+        self, ctx: cairo.Context, entity: TextBoxEntity
+    ) -> None:
+        """Overdraws the characters that come from template
+        expressions in an accent colour. On-screen only."""
+        sketch = self.element.sketch
+        dynamic_geo = entity.to_dynamic_geometry(
+            sketch.registry, sketch.resolve_entity_segments(entity)
+        )
+        if dynamic_geo.is_empty():
+            return
+        geometry_to_cairo(dynamic_geo, ctx)
+        ctx.set_source_rgb(*DYNAMIC_TEXT_COLOR)
+        ctx.fill()
 
     # --- Overlays (Constraints & Junctions) ---
 

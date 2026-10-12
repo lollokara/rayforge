@@ -720,3 +720,83 @@ def test_set_style_clamps_negative_knockout_margin(registry):
     box = _make_text_box(registry)
     box.set_style({"knockout_margin": -3.0})
     assert box.knockout_margin == 0.0
+
+
+def test_placeholder_size_matches_single_h_geometry():
+    font = FontConfig()
+    box = TextBoxEntity(0, 0, 0, 0, "", font)
+    min_x, min_y, max_x, max_y = text_to_geometry("H", font_config=font).rect()
+    width, height = box.placeholder_size()
+    assert width == pytest.approx(max_x - min_x)
+    assert height == pytest.approx(max_y - min_y)
+    assert box.get_natural_size("") == box.placeholder_size()
+    assert width < 5.0 and height < 5.0
+
+
+_LAYOUT_STYLES = [
+    {},
+    {"mirrored": True},
+    {"reverse": True},
+    {"vertical": True},
+    {"rotation": 30.0},
+    {"mirrored": True, "reverse": True, "rotation": 15.0},
+]
+
+
+def _box_at(registry, content, **style):
+    p1 = registry.add_point(0, 0)
+    p2 = registry.add_point(30, 0)
+    p3 = registry.add_point(0, 8)
+    box = registry.get_entity(
+        registry.add_text_box(p1, p2, p3, content, FontConfig())
+    )
+    box.set_style(style)
+    return box
+
+
+@pytest.mark.parametrize("style", _LAYOUT_STYLES)
+def test_dynamic_geometry_all_dynamic_equals_full(registry, style):
+    box = _box_at(registry, "A12", **style)
+    full = box.to_geometry(registry, resolved_content="A12")
+    dyn = box.to_dynamic_geometry(registry, [("A12", True)])
+    assert dyn.rect() == pytest.approx(full.rect())
+
+
+@pytest.mark.parametrize("style", _LAYOUT_STYLES)
+def test_dynamic_geometry_overlays_full_subset(registry, style):
+    box = _box_at(registry, "AB12", **style)
+    segments = [("AB", False), ("12", True)]
+    full = box.to_geometry(registry, resolved_content="AB12")
+    dyn = box.to_dynamic_geometry(registry, segments)
+    static = box.to_dynamic_geometry(registry, [("AB", True), ("12", False)])
+    fx0, fy0, fx1, fy1 = full.rect()
+    dx0, dy0, dx1, dy1 = dyn.rect()
+    assert fx0 - 1e-6 <= dx0 and dx1 <= fx1 + 1e-6
+    assert fy0 - 1e-6 <= dy0 and dy1 <= fy1 + 1e-6
+    assert dyn.rect() != static.rect()
+
+
+def test_dynamic_geometry_without_dynamic_text_is_empty(registry):
+    box = _box_at(registry, "AB")
+    assert box.to_dynamic_geometry(registry, [("AB", False)]).is_empty()
+
+
+def test_dynamic_geometry_on_path_skips_static_chars(registry):
+    box = _box_at(registry, "AB12")
+    p1 = registry.add_point(0, -20)
+    p2 = registry.add_point(60, -20)
+    line = registry.add_line(p1, p2)
+    box.set_style({"path_entity_id": line})
+    segments = [("AB", False), ("12", True)]
+    full = box.to_geometry(registry, resolved_content="AB12")
+    dyn = box.to_dynamic_geometry(registry, segments)
+    assert not dyn.is_empty()
+    assert dyn.rect()[0] > full.rect()[0]
+
+
+def test_is_plain_layout(registry):
+    box = _box_at(registry, "A")
+    assert box.is_plain_layout()
+    for style in _LAYOUT_STYLES[1:5]:
+        box.set_style({**STYLE_DEFAULTS, **style})
+        assert not box.is_plain_layout()

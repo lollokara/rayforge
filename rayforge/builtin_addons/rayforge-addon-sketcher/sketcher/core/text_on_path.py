@@ -8,6 +8,7 @@ on the path reproduces the straight layout exactly on a straight path.
 from __future__ import annotations
 
 import math
+from collections.abc import Collection
 
 from raygeo.geo import Geometry, Matrix
 from raygeo.geo.shape.text import FontConfig, text_to_geometry
@@ -73,6 +74,7 @@ def text_on_path(
     side: str = "outside",
     align: str = "center",
     offset: float = 0.0,
+    keep: Collection[int] | None = None,
 ) -> Geometry:
     """
     Returns the glyph outlines of *text* laid along *polyline*.
@@ -80,7 +82,9 @@ def text_on_path(
     Each character sits at its advance position measured as arc
     length, rotated to the path tangent. "outside" places the glyphs
     on the left of the travel direction; "inside" reverses the path,
-    which flips both the normal and the reading direction.
+    which flips both the normal and the reading direction. When
+    *keep* is given only the characters at those indices are emitted,
+    positioned as in the full text.
     """
     geo = Geometry()
     if len(polyline) < 2:
@@ -97,6 +101,8 @@ def text_on_path(
         align, total, font_config.get_text_width(text), offset
     )
     for index, char in enumerate(text):
+        if keep is not None and index not in keep:
+            continue
         glyph = text_to_geometry(char, font_config=font_config)
         if glyph.is_empty():
             continue

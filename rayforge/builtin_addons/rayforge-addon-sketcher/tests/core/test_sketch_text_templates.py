@@ -377,3 +377,47 @@ def test_serial_changes_after_advance_and_re_solve(serial_dir):
 def test_serial_is_a_protected_builtin(serial_dir):
     unregister_template_function("serial")
     assert "serial" in get_template_functions()
+
+
+def test_resolve_content_does_not_touch_cache():
+    s = Sketch()
+    s.set_param("width", 50.0)
+    box = _add_text_box(s, "W={width}")
+    s.solve()
+    assert s.resolve_content("N={width}") == "N=50.0"
+    assert s._resolved_text_cache == {}
+    assert s._resolve_text_content(box) == "W=50.0"
+
+
+def test_resolve_content_segments_marks_dynamic_pieces():
+    s = Sketch()
+    s.set_param("width", 5.0)
+    s.solve()
+    assert s.resolve_content_segments("a{width}b") == [
+        ("a", False),
+        ("5.0", True),
+        ("b", False),
+    ]
+    assert s.resolve_content_segments("") == []
+
+
+def test_resolve_entity_segments_match_cached_text():
+    s = Sketch()
+    s.set_param("width", 5.0)
+    box = _add_text_box(s, "a{width}b")
+    s.solve()
+    segments = s.resolve_entity_segments(box)
+    assert "".join(t for t, _ in segments) == s._resolve_text_content(box)
+
+
+def test_exported_geometry_independent_of_dynamic_subset():
+    s = Sketch()
+    s.set_param("width", 5.0)
+    box = _add_text_box(s, "a{width}")
+    s.solve()
+    before = s.to_geometry().rect()
+    box.to_dynamic_geometry(s.registry, s.resolve_entity_segments(box))
+    assert s.to_geometry().rect() == before
+    assert not box.to_dynamic_geometry(
+        s.registry, s.resolve_entity_segments(box)
+    ).is_empty()
