@@ -110,26 +110,31 @@ integradas abaixo, e funções personalizadas podem ser registradas para eles (v
 
 ### Funções integradas de modelo
 
-| Função          | Tipo de retorno | Descrição                                            |
-| --------------- | --------------- | ---------------------------------------------------- |
-| `{today()}`     | `date`          | Data UTC atual (ex.: `2026-08-26`)                   |
-| `{date()}`      | `date`          | Alias de `today()`                                   |
-| `{now()}`       | `datetime`      | Data e hora UTC atuais                               |
-| `{time()}`      | `time`          | Hora UTC atual (ex.: `15:30:00.123456+00:00`)        |
-| `{timestamp()}` | `float`         | Marca temporal Unix (segundos desde a época)         |
-| `{uuid4()}`     | `str`           | String hexadecimal de 8 caracteres (ex.: `a1b2c3d4`) |
-| `{uuid8()}`     | `str`           | Alias de `uuid4()`                                   |
-| `{uuid()}`      | `str`           | String UUID v4 completa (36 caracteres)              |
+| Função          | Tipo de retorno | Descrição                                                            |
+| --------------- | --------------- | -------------------------------------------------------------------- |
+| `{today()}`     | `date`          | Data UTC atual (ex.: `2026-08-26`)                                   |
+| `{date()}`      | `date`          | Alias de `today()`                                                   |
+| `{now()}`       | `datetime`      | Data e hora UTC atuais                                               |
+| `{time()}`      | `time`          | Hora UTC atual (ex.: `15:30:00.123456+00:00`)                        |
+| `{timestamp()}` | `float`         | Marca temporal Unix (segundos desde a época)                         |
+| `{uuid4()}`     | `str`           | String hexadecimal de 8 caracteres (ex.: `a1b2c3d4`)                 |
+| `{uuid8()}`     | `str`           | Alias de `uuid4()`                                                   |
+| `{uuid()}`      | `str`           | String UUID v4 completa (36 caracteres)                              |
+| `{serial()}`    | `str`           | Valor atual de um contador de série; `{serial("name")}` seleciona um |
 
 Usos típicos incluem números de série únicos a cada resolução (`Peça #{uuid4()}`), rótulos de
 dimensões em tempo real (`L={width:.1f} A={height:.1f}`), datar cada peça (`Data: {today()}`),
 contadores de produção (`{name} - {count:.0f}un`) ou marcas temporais Unix para registro de produção
 (`{timestamp():.0f}`).
 
+`serial()` lê um contador persistente que avança uma vez para cada trabalho enviado ou exportado, de
+modo que cada peça receba o próximo número. Consulte [Números de série](text-box.md#serial-numbers).
+
 ## Funções de modelo personalizadas {#custom-template-functions}
 
 Você pode registrar suas próprias funções para usar dentro de modelos de texto. Isso é útil para
 obter números de série de um banco de dados, ler dados externos ou gerar rótulos personalizados.
+Para um número sequencial simples você não precisa de um script: use a função integrada `serial()`.
 
 ### Escrever o script de registro
 

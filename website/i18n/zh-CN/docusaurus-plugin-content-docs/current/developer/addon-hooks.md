@@ -65,6 +65,18 @@ def main_window_ready(main_window):
     main_window.add_page("my-page", MyCustomPage())
 ```
 
+### `job_dispatched(doc, kind)`
+
+在作业成功递交后在主线程上调用。当机器运行发送的作业时，`kind` 为
+`"send"`；当 G 代码被写入文件时，`kind` 为
+`"export"`。寻边对焦、指针模拟运行、失败或空作业、健全性检查和预览不会调用它。将其用于应该在每个生产零件上发生一次的操作，例如递增计数器。
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
+```
+
 ## 注册钩子
 
 这些钩子让您可以向 Rayforge 的各种注册表注册自定义组件。
@@ -261,7 +273,9 @@ def transformer_settings_loaded(dialog, step, transformer):
 钩子是有版本的，以保持向后兼容性。当添加新钩子或现有钩子发生变化时，API 版本会递增。您的插件的
 `api_version` 字段必须至少是最低支持的版本。
 
-当前 API 版本是 9。以下是最近版本的变更内容：
+当前 API 版本是 22。以下是最近版本的变更内容：
+
+**版本 22** 添加了 `job_dispatched`。
 
 **版本 9** 添加了 `main_window_ready`、`register_exporters`、`register_importers` 和
 `register_renderers`。

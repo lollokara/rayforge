@@ -113,27 +113,33 @@ fonctions intégrées ci-dessous, et des fonctions personnalisées peuvent leur 
 
 ### Fonctions de modèle intégrées
 
-| Fonction        | Type retour | Description                                           |
-| --------------- | ----------- | ----------------------------------------------------- |
-| `{today()}`     | `date`      | Date UTC actuelle (ex : `2026-08-26`)                 |
-| `{date()}`      | `date`      | Alias de `today()`                                    |
-| `{now()}`       | `datetime`  | Date et heure UTC actuelles                           |
-| `{time()}`      | `time`      | Heure UTC actuelle (ex : `15:30:00.123456+00:00`)     |
-| `{timestamp()}` | `float`     | Horodatage Unix (secondes depuis l'époque)            |
-| `{uuid4()}`     | `str`       | Chaîne hexadécimale de 8 caractères (ex : `a1b2c3d4`) |
-| `{uuid8()}`     | `str`       | Alias de `uuid4()`                                    |
-| `{uuid()}`      | `str`       | Chaîne UUID v4 complète (36 caractères)               |
+| Fonction        | Type retour | Description                                                                   |
+| --------------- | ----------- | ----------------------------------------------------------------------------- |
+| `{today()}`     | `date`      | Date UTC actuelle (ex : `2026-08-26`)                                         |
+| `{date()}`      | `date`      | Alias de `today()`                                                            |
+| `{now()}`       | `datetime`  | Date et heure UTC actuelles                                                   |
+| `{time()}`      | `time`      | Heure UTC actuelle (ex : `15:30:00.123456+00:00`)                             |
+| `{timestamp()}` | `float`     | Horodatage Unix (secondes depuis l'époque)                                    |
+| `{uuid4()}`     | `str`       | Chaîne hexadécimale de 8 caractères (ex : `a1b2c3d4`)                         |
+| `{uuid8()}`     | `str`       | Alias de `uuid4()`                                                            |
+| `{uuid()}`      | `str`       | Chaîne UUID v4 complète (36 caractères)                                       |
+| `{serial()}`    | `str`       | Valeur actuelle d'un compteur de série ; `{serial("name")}` en sélectionne un |
 
 Les utilisations typiques comprennent les numéros de série uniques à chaque résolution
 (`Pièce #{uuid4()}`), les étiquettes de dimensions dynamiques (`W={width:.1f} H={height:.1f}`), les
 dates (`Date : {today()}`), les compteurs de production (`{name} - {count:.0f}pcs`) ou les
 horodatages Unix pour la journalisation de production (`{timestamp():.0f}`).
 
+`serial()` lit un compteur persistant qui avance d'un pas pour chaque travail envoyé ou exporté, de
+sorte que chaque pièce reçoit le numéro suivant. Voir
+[Numéros de série](text-box.md#serial-numbers).
+
 ## Fonctions de modèle personnalisées {#custom-template-functions}
 
 Vous pouvez enregistrer vos propres fonctions à utiliser dans les modèles de zones de texte. C'est
 utile pour récupérer des numéros de série depuis une base de données, lire des données externes ou
-générer des étiquettes personnalisées.
+générer des étiquettes personnalisées. Pour un simple numéro d'ordre, vous n'avez pas besoin d'un
+script : utilisez la fonction intégrée `serial()`.
 
 ### Écrire le script d'enregistrement
 

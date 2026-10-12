@@ -78,6 +78,20 @@ def main_window_ready(main_window):
     main_window.add_page("my-page", MyCustomPage())
 ```
 
+### `job_dispatched(doc, kind)`
+
+कोई कार्य सफलतापूर्वक सौंपे जाने के बाद मुख्य थ्रेड पर कॉल किया जाता है. जब मशीन ने कोई भेजा गया
+कार्य चलाया हो तो `kind` `"send"` होता है और जब G-कोड किसी फ़ाइल में लिखा गया हो तो `"export"` होता
+है. फ़्रेमिंग, पॉइंटर ड्राई रन, विफल या खाली कार्य, स्वच्छता जाँच और पूर्वावलोकन इसे कॉल नहीं करते
+हैं. इसका उपयोग किसी भी ऐसी चीज़ के लिए करें जो उत्पादित प्रति भाग एक बार होनी चाहिए, जैसे काउंटर
+आगे बढ़ाना.
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
+```
+
 ## पंजीकरण हुक
 
 ये हुक आपको Rayforge की विभिन्न रजिस्ट्रियों के साथ कस्टम घटक पंजीकृत करने देते हैं.
@@ -287,7 +301,9 @@ def transformer_settings_loaded(dialog, step, transformer):
 पश्च-संगतता बनाए रखने के लिए हुक संस्करणित होते हैं. नए हुक जोड़ने या मौजूदा बदलने पर API संस्करण
 बढ़ाया जाता है. आपके ऐड-ऑन का `api_version` फ़ील्ड कम से कम न्यूनतम समर्थित संस्करण होना चाहिए.
 
-वर्तमान API संस्करण 9 है. हाल के संस्करणों में क्या बदला:
+वर्तमान API संस्करण 22 है. हाल के संस्करणों में क्या बदला:
+
+**संस्करण 22** ने `job_dispatched` जोड़ा.
 
 **संस्करण 9** ने `main_window_ready`, `register_exporters`, `register_importers`, और
 `register_renderers` जोड़े.

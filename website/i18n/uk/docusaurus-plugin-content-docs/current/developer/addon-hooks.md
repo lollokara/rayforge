@@ -71,6 +71,20 @@ def main_window_ready(main_window):
     main_window.add_page("my-page", MyCustomPage())
 ```
 
+### `job_dispatched(doc, kind)`
+
+Викликається в головному потоці після успішної передачі завдання. `kind` має значення `"send"`, коли
+верстат запустив надіслане завдання, і `"export"`, коли G-код було записано у файл. Кадрування,
+холості прогони вказівника, невдалі або порожні завдання, перевірки працездатності та попередній
+перегляд не викликають його. Використовуйте його для всього, що має відбуватися один раз на
+вироблену деталь, наприклад, для переведення лічильника.
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
+```
+
 ## Хуки реєстрації
 
 Ці хуки дозволяють реєструвати власні компоненти в різних реєстрах Rayforge.
@@ -280,7 +294,9 @@ def transformer_settings_loaded(dialog, step, transformer):
 існуючі, версія API збільшується. Поле `api_version` вашого аддону має бути не менше мінімальної
 підтримуваної версії.
 
-Поточна версія API — 9. Ось що змінилося в останніх версіях:
+Поточна версія API — 22. Ось що змінилося в останніх версіях:
+
+**Версія 22** додала `job_dispatched`.
 
 **Версія 9** додала `main_window_ready`, `register_exporters`, `register_importers` та
 `register_renderers`.

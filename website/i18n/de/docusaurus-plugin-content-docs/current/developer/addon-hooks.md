@@ -73,6 +73,20 @@ def main_window_ready(main_window):
     main_window.add_page("my-page", MyCustomPage())
 ```
 
+### `job_dispatched(doc, kind)`
+
+Wird auf dem Haupt-Thread aufgerufen, nachdem ein Auftrag erfolgreich übergeben wurde. `kind` ist
+`"send"`, wenn die Maschine einen gesendeten Auftrag ausgeführt hat, und `"export"`, wenn G-Code in
+eine Datei geschrieben wurde. Framing, Zeiger-Testläufe, fehlgeschlagene oder leere Aufträge,
+Plausibilitätsprüfungen und Vorschauen rufen ihn nicht auf. Verwende ihn für alles, was einmal pro
+hergestelltem Teil geschehen soll, wie etwa das Weiterschalten eines Zählers.
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
+```
+
 ## Registrierungs-Hooks
 
 Diese Hooks ermöglichen es dir, benutzerdefinierte Komponenten bei Rayforges verschiedenen
@@ -285,7 +299,9 @@ Hooks sind versioniert, um die Abwärtskompatibilität zu gewährleisten. Wenn n
 werden oder sich bestehende ändern, wird die API-Version erhöht. Das Feld `api_version` deines
 Addons muss mindestens die minimal unterstützte Version sein.
 
-Die aktuelle API-Version ist 9. Hier ist, was sich in den letzten Versionen geändert hat:
+Die aktuelle API-Version ist 22. Hier ist, was sich in den letzten Versionen geändert hat:
+
+**Version 22** fügte `job_dispatched` hinzu.
 
 **Version 9** fügte `main_window_ready`, `register_exporters`, `register_importers` und
 `register_renderers` hinzu.

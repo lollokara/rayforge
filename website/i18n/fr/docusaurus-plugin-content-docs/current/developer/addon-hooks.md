@@ -76,6 +76,20 @@ def main_window_ready(main_window):
     main_window.add_page("my-page", MyCustomPage())
 ```
 
+### `job_dispatched(doc, kind)`
+
+Appelé sur le fil principal après qu'un travail a été transmis avec succès. `kind` vaut `"send"`
+lorsque la machine a exécuté un travail envoyé et `"export"` lorsque du G-code a été écrit dans un
+fichier. Le cadrage, les essais à blanc au pointeur, les travaux échoués ou vides, les vérifications
+de cohérence et les aperçus ne l'appellent pas. Utilisez-le pour tout ce qui doit se produire une
+fois par pièce produite, comme l'incrémentation d'un compteur.
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
+```
+
 ## Hooks d'enregistrement
 
 Ces hooks vous permettent d'enregistrer des composants personnalisés auprès des différents registres
@@ -291,7 +305,9 @@ Les hooks sont versionnés pour maintenir la compatibilité ascendante. Quand de
 ajoutés ou que des hooks existants changent, la version de l'API est incrémentée. Le champ
 `api_version` de votre extension doit être au moins égal à la version minimale supportée.
 
-La version actuelle de l'API est 9. Voici ce qui a changé dans les versions récentes :
+La version actuelle de l'API est 22. Voici ce qui a changé dans les versions récentes :
+
+**La version 22** a ajouté `job_dispatched`.
 
 **La version 9** a ajouté `main_window_ready`, `register_exporters`, `register_importers` et
 `register_renderers`.
