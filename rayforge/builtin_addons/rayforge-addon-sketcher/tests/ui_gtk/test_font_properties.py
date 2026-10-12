@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -13,7 +14,7 @@ if sys.platform.startswith("linux"):
         )
 
 from raygeo.geo.shape.text import FontConfig
-from sketcher.core import Sketch
+from sketcher.core import Sketch, fonts
 from sketcher.ui_gtk.font_properties import (
     FontPropertiesWidget,
     split_text_selection,
@@ -167,3 +168,49 @@ def test_path_rows_apply_style(widget_with_box):
     assert entity.path_align == "start"
     assert entity.path_offset == pytest.approx(2.5)
     assert entity.content_bottom == "BOTTOM"
+
+
+FONT_FILE = Path(__file__).parents[1] / "assets" / "TestFont-Regular.ttf"
+
+
+@pytest.fixture
+def font_data_dir(tmp_path, monkeypatch):
+    monkeypatch.setattr("rayforge.config.ADDON_DATA_DIR", tmp_path)
+    monkeypatch.setattr(fonts, "_families_by_file", {})
+    return tmp_path
+
+
+@pytest.mark.ui
+def test_install_font_selects_it(font_data_dir, widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+
+    widget._install_font_file(FONT_FILE)
+
+    family = fonts.list_custom_families()[0]
+    assert entity.font_config.family == family
+    assert widget.missing_font_row.get_visible() is False
+
+
+@pytest.mark.ui
+def test_missing_font_shows_warning(font_data_dir, widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+    entity.font_config = FontConfig(family="Totally Missing Font", size=10.0)
+
+    widget.set_text_entity(tb_id)
+
+    assert widget.missing_font_row.get_visible() is True
+
+
+@pytest.mark.ui
+def test_install_rejected_file_keeps_font(font_data_dir, widget_with_box):
+    widget, sketch, tb_id = widget_with_box
+    entity = sketch.registry.get_entity(tb_id)
+    before = entity.font_config.family
+    bogus = font_data_dir / "broken.ttf"
+    bogus.write_bytes(b"not a font")
+
+    widget._install_font_file(bogus)
+
+    assert entity.font_config.family == before

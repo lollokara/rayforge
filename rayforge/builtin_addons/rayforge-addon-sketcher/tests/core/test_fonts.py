@@ -80,3 +80,12 @@ def test_remove_font_deletes_file_and_listing():
 
 def test_remove_unknown_font_is_a_noop():
     fonts.remove_font("No Such Family")
+
+
+def test_is_known_family():
+    system = ["DejaVu Sans", "Noto Serif"]
+    assert fonts.is_known_family("dejavu sans", system)
+    assert fonts.is_known_family("sans-serif", system)
+    assert not fonts.is_known_family("Totally Missing", system)
+    family = fonts.install_font(FONT_FILE)[0]
+    assert fonts.is_known_family(family, system)

@@ -1,8 +1,9 @@
 import logging
 from gettext import gettext as _
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from gi.repository import Adw, Gtk, Pango
+from gi.repository import Adw, Gio, GLib, Gtk, Pango
 from raygeo.geo.shape.text import FontConfig
 
 from rayforge.ui_gtk.icons import get_icon
@@ -12,6 +13,7 @@ from rayforge.ui_gtk.shared.pref_rows import (
     SpinRow,
 )
 
+from ..core import fonts
 from ..core.commands.text_property import (
     ModifyTextPropertyCommand,
 )
@@ -86,6 +88,38 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
         )
         self.font_family_row.add_suffix(get_icon("go-next-symbolic"))
         self.add(self.font_family_row)
+
+        self.missing_font_row = Adw.ActionRow()
+        self.missing_font_row.set_title(_("Font Not Installed"))
+        self.missing_font_row.set_subtitle(
+            _("A substitute font is used. Install the font or pick another.")
+        )
+        self.missing_font_row.add_prefix(get_icon("warning-symbolic"))
+        self.missing_font_row.set_visible(False)
+        self.add(self.missing_font_row)
+
+        self.custom_font_row = Adw.ComboRow()
+        self.custom_font_row.set_title(_("Custom Font"))
+        self.custom_font_row.connect(
+            "notify::selected", self._on_custom_font_selected
+        )
+        self.add(self.custom_font_row)
+
+        self.install_font_row = Adw.ActionRow()
+        self.install_font_row.set_title(_("Install Font…"))
+        self.install_font_row.set_activatable(True)
+        self.install_font_row.connect(
+            "activated", self._on_install_font_activated
+        )
+        self.add(self.install_font_row)
+
+        self.remove_font_row = Adw.ActionRow()
+        self.remove_font_row.set_title(_("Remove Custom Font"))
+        self.remove_font_row.set_activatable(True)
+        self.remove_font_row.connect(
+            "activated", self._on_remove_font_activated
+        )
+        self.add(self.remove_font_row)
 
         self.font_size_row = SpinRow(
             _("Font Size"),
@@ -239,8 +273,99 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             self.italic_switch.set_active(font_config.italic)
             self._current_font_family = font_config.family
             self.font_family_row.set_subtitle(self._current_font_family)
+            self._refresh_custom_fonts()
         finally:
             self._in_update = False
+
+    def _system_families(self) -> list[str]:
+        """Family names known to the system font map."""
+        return [
+            family.get_name()
+            for family in self.get_pango_context().list_families()
+        ]
+
+    def _refresh_custom_fonts(self):
+        """Rebuilds the custom font list and the missing-font warning
+        for the current family. Callers hold ``_in_update``."""
+        families = fonts.list_custom_families()
+        self.custom_font_row.set_model(
+            Gtk.StringList.new([_("None")] + families)
+        )
+        selected = 0
+        if self._current_font_family in families:
+            selected = families.index(self._current_font_family) + 1
+        self.custom_font_row.set_selected(selected)
+        self.remove_font_row.set_sensitive(selected > 0)
+        self.missing_font_row.set_visible(
+            not fonts.is_known_family(
+                self._current_font_family, self._system_families()
+            )
+        )
+
+    def _set_font_family(self, family: str):
+        """Selects *family* and applies it to the text entity."""
+        self._in_update = True
+        try:
+            self._current_font_family = family
+            self.font_family_row.set_subtitle(family)
+            self._refresh_custom_fonts()
+        finally:
+            self._in_update = False
+        self._apply_font_config()
+
+    def _on_custom_font_selected(self, row, *args):
+        """Handles a choice in the custom font list."""
+        if self._in_update or self._text_entity_id is None:
+            return
+        index = row.get_selected()
+        families = fonts.list_custom_families()
+        if 0 < index <= len(families):
+            self._set_font_family(families[index - 1])
+
+    def _install_font_file(self, path: Path):
+        """Installs a font file and selects its first family."""
+        try:
+            families = fonts.install_font(path)
+        except ValueError as e:
+            logger.warning(f"Font install failed: {e}")
+            self.install_font_row.set_subtitle(
+                _("Could not install {name}").format(name=path.name)
+            )
+            return
+        self.install_font_row.set_subtitle("")
+        self._set_font_family(families[0])
+
+    def _on_install_font_activated(self, row, *args):
+        """Opens a file dialog to pick a font file to install."""
+        font_filter = Gtk.FileFilter()
+        font_filter.set_name(_("Font Files"))
+        font_filter.add_pattern("*.ttf")
+        font_filter.add_pattern("*.otf")
+        filters = Gio.ListStore.new(Gtk.FileFilter)
+        filters.append(font_filter)
+        dialog = Gtk.FileDialog.new()
+        dialog.set_title(_("Install Font"))
+        dialog.set_filters(filters)
+        dialog.set_default_filter(font_filter)
+        dialog.open(self.editor.parent_window, None, self._on_font_file_chosen)
+
+    def _on_font_file_chosen(self, dialog, result):
+        try:
+            file = dialog.open_finish(result)
+        except GLib.Error:
+            return
+        if file and file.get_path():
+            self._install_font_file(Path(file.get_path()))
+
+    def _on_remove_font_activated(self, row, *args):
+        """Removes the selected custom font and falls back to
+        sans-serif."""
+        if self._in_update or self._text_entity_id is None:
+            return
+        if not fonts.is_custom_family(self._current_font_family):
+            return
+        fonts.remove_font(self._current_font_family)
+        self._set_font_family("sans-serif")
 
     def _get_font_config_from_ui(self) -> FontConfig:
         """Creates a FontConfig from the current UI values."""
@@ -408,6 +533,7 @@ class FontPropertiesWidget(Adw.PreferencesGroup):
             if family:
                 self._current_font_family = family
                 self.font_family_row.set_subtitle(self._current_font_family)
+                self._refresh_custom_fonts()
 
             size = font_desc.get_size()
             if size > 0:

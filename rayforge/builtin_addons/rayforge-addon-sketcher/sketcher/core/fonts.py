@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import shutil
+from collections.abc import Iterable
 from pathlib import Path
 
 from raygeo.geo.shape.text import load_font_file
@@ -19,6 +20,7 @@ from rayforge.config import get_addon_data_dir
 logger = logging.getLogger(__name__)
 
 FONT_SUFFIXES = (".ttf", ".otf")
+GENERIC_FAMILIES = ("sans-serif", "serif", "monospace")
 
 _families_by_file: dict[str, list[str]] = {}
 
@@ -87,3 +89,14 @@ def remove_font(family: str) -> None:
         if family in names:
             Path(key).unlink(missing_ok=True)
             del _families_by_file[key]
+
+
+def is_known_family(family: str, system_families: Iterable[str]) -> bool:
+    """True when *family* is a generic family, an installed custom
+    font or one of *system_families* (compared case-insensitively).
+    raygeo silently substitutes unknown families, so the UI uses this
+    to warn before the wrong face is engraved."""
+    name = family.lower()
+    if name in GENERIC_FAMILIES or is_custom_family(family):
+        return True
+    return name in {system.lower() for system in system_families}
