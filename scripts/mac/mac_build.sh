@@ -285,8 +285,12 @@ PY
     # Remove conflicting libiconv bundled by cv2.
     rm -f "$FW_DIR/libiconv.2.dylib"
 
-    # Replace the launcher with a wrapper that sets env vars,
-    # keeping the Mach-O as Rayforge.bin.
+    # Keep the Mach-O as Rayforge.bin while the dylib paths are rewritten
+    # below. It is moved back to Rayforge before signing: macOS only treats
+    # a process as the app (and only then offers the Local Network
+    # permission) when it is the bundle's CFBundleExecutable, so there must
+    # be no launcher script that execs a different file. The environment
+    # the old wrapper exported is set by hooks/rthook_macos_bundle_env.py.
     if [ -f "$BIN_DIR/Rayforge" ] && [ ! -f "$BIN_DIR/Rayforge.bin" ]; then
         if file "$BIN_DIR/Rayforge" | grep -q "Mach-O"; then
             mv "$BIN_DIR/Rayforge" "$BIN_DIR/Rayforge.bin"
@@ -295,16 +299,6 @@ PY
         fi
     fi
     if [ -f "$BIN_DIR/Rayforge.bin" ]; then
-        cat > "$BIN_DIR/Rayforge" <<'SH'
-#!/bin/bash
-APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-export DYLD_LIBRARY_PATH="$APP_DIR/Frameworks"
-export DYLD_FALLBACK_LIBRARY_PATH="$APP_DIR/Frameworks"
-export GI_TYPELIB_PATH="$APP_DIR/Resources/gi_typelibs"
-export GIO_EXTRA_MODULES="$APP_DIR/Frameworks/gio_modules"
-exec "$APP_DIR/MacOS/Rayforge.bin" "$@"
-SH
-        chmod +x "$BIN_DIR/Rayforge"
         install_name_tool -add_rpath @executable_path/../Frameworks \
             "$BIN_DIR/Rayforge.bin" 2>/dev/null || true
     fi
@@ -566,6 +560,15 @@ SH
 
     # Note: GTK4 typelibs are automatically bundled by PyInstaller to Resources/gi_typelibs
 
+    # The Mach-O becomes the bundle executable, with a UUID of its own: the
+    # one PyInstaller's bootloader carries is shared by every app built
+    # with it, and macOS keys its Local Network state to that UUID.
+    if [ -f "$BIN_DIR/Rayforge.bin" ]; then
+        rm -f "$BIN_DIR/Rayforge"
+        mv "$BIN_DIR/Rayforge.bin" "$BIN_DIR/Rayforge"
+        "$VENV_PY" scripts/mac/set_macho_uuid.py "$BIN_DIR/Rayforge"
+    fi
+
     # Re-sign after install_name_tool and dylib rewrites to keep
     # macOS code-signing validation valid on Apple Silicon.
     if [ "$(uname -m)" = "arm64" ]; then
@@ -594,7 +597,7 @@ SH
     #     cp -r "/usr/local/lib/gdk-pixbuf-2.0" "$FW_DIR/" || true
     # fi
 
-    # Make sure the plist still points to the wrapper.
+    # Make sure the plist points to the bundle executable.
     /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable Rayforge" \
         "$APP_ROOT/Info.plist" 2>/dev/null || true
 
