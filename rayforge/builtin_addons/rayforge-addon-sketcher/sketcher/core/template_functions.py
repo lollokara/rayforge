@@ -21,6 +21,9 @@ Built-in functions
                     ``"550e8400-e29b-...-``).
 ``uuid8()``         Short UUID string (first 8 hex chars).
 ``uuid4()``         Legacy alias for ``uuid8()``.
+``serial(name)``    Current value of a persistent serial counter
+                    (``str``); ``name`` defaults to ``"default"``.
+                    Advances once per sent or exported job.
 ==================  =========================================================
 """
 
@@ -31,10 +34,13 @@ import uuid as _uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
 
-# A call returning the value to substitute.  Callables are stored
-# zero-argument and invoked fresh per evaluation so that volatile
-# values (e.g. uuids) differ between renders.
-TemplateFunction = Callable[[], object]
+from .serial import peek as _serial_peek
+
+# A call returning the value to substitute.  Callables are invoked
+# fresh per evaluation so that volatile values (e.g. uuids) differ
+# between renders.  The template expression calls them itself, so
+# they may take arguments (``{serial("batch")}``).
+TemplateFunction = Callable[..., object]
 
 _REGISTRY: dict[str, TemplateFunction] = {}
 
@@ -55,6 +61,7 @@ _register_builtin("timestamp", _time.time)
 _register_builtin("uuid", lambda: str(_uuid.uuid4()))
 _register_builtin("uuid8", lambda: _uuid.uuid4().hex[:8])
 _register_builtin("uuid4", lambda: _uuid.uuid4().hex[:8])
+_register_builtin("serial", _serial_peek)
 
 
 def register_template_function(name: str, func: TemplateFunction) -> None:
@@ -63,9 +70,8 @@ def register_template_function(name: str, func: TemplateFunction) -> None:
     Args:
         name: The name as used in template expressions (e.g. ``"foo"``
             makes ``{foo()}`` work).
-        func: A zero-argument callable returning the substitution value.
-            It is invoked on every render, so volatile values (uuids,
-            timestamps) produce a fresh result each time.
+        func: A callable returning the substitution value; template
+            expressions may pass it arguments.
 
     Raises:
         ValueError: If *name* shadows a built-in name unless
@@ -88,6 +94,7 @@ def unregister_template_function(name: str) -> None:
         "uuid",
         "uuid8",
         "uuid4",
+        "serial",
     ):
         return
     _REGISTRY.pop(name, None)

@@ -31,8 +31,82 @@ The **Font Properties** panel in the sidebar controls the appearance of the text
 canvas:
 
 - **Font family** — choose from the installed system fonts.
+- **Custom font** — choose a font you installed yourself (see [Custom Fonts](#custom-fonts)).
 - **Font size** — in points.
 - **Bold** and **Italic** toggles.
+
+## Text Transforms
+
+The same panel can change how the text is laid out inside its frame:
+
+- **Mirror** — flips the text left to right, for engraving the back of a transparent material.
+- **Reverse Characters** — writes the characters in reverse order without flipping them.
+- **Vertical** — stacks upright characters from top to bottom.
+- **Rotation** — turns the text around the centre of its frame. The frame itself stays horizontal.
+- **Upside Down** — a shortcut for a rotation of 180°.
+
+While one of these is active you can still type into the text box, but clicking no longer places the
+caret inside the text.
+
+## Knock-out Text
+
+Turn on **Knock-out** to engrave a plate with the text left blank. The plate is the text frame grown
+by the **Knock-out Margin** on every side. The outline contains the plate and the letters; the fill
+covers the plate except for the letters.
+
+The enclosed parts of letters such as O, A and B are not kept, so knock-out text is meant for
+engraving, not for cutting stencils.
+
+## Text on a Path
+
+Text can follow a line, an arc, a circle or a curve:
+
+1. Select the text box together with the shape it should follow.
+2. Activate **Follow Path** in the Font Properties panel.
+
+- **Path Side** — **Outside** places the text on the left of the path direction; **Inside** places
+  it on the other side and reverses the reading direction, so text on the inside of a circle reads
+  upright at the bottom.
+- **Path Alignment** — start, centre or end of the path.
+- **Path Offset** — shifts the text along the path.
+- **Bottom Text** — on a circle, a second line of text that is centred at the bottom on the inside,
+  while the main text is centred at the top on the outside. Both read upright, which makes a round
+  stamp or seal.
+
+To release the text, select only the text box and activate **Follow Path** again. If the shape is
+deleted, the text returns to its frame.
+
+Text on a path keeps its font size, and mirror, vertical, rotation and knock-out do not apply to it.
+A path is a single shape; text does not continue from one line or arc onto the next.
+
+## Custom Fonts
+
+Use **Install Font…** to add a `.ttf` or `.otf` file. Installed fonts appear in the **Custom Font**
+list on every sketch, and **Remove Custom Font** deletes the selected one.
+
+Fonts are stored on your computer, not inside the project file. When a project uses a font that is
+not installed, the panel shows **Font Not Installed** and a substitute font is used until you
+install the font or pick another one.
+
+## Presets
+
+A preset stores the font and the text style, but not the text itself or the path it follows. Type a
+name into **Save as Preset** to store the settings of the selected text box, pick a name from
+**Preset** to apply it, and use **Delete Preset** to remove the selected preset. Applying a preset
+is a single undo step.
+
+## Serial Numbers
+
+**Insert Serial Number** adds `{serial()}` to the text, shows the next number, and explains that the
+counter advances once per job sent to the machine or exported as G-code. Framing, previews, and
+cancelled or failed jobs do not use up a number.
+
+Counters are shared by all documents and are managed under **Settings → Serial Numbers**. The
+settings page guides you through three steps: create a counter, reference it with `{serial("name")}`
+or Insert Serial Number in Font Properties, and note that the counter advances once per job rather
+than for each copy on the canvas. Each counter card displays
+`Use as {serial("name")}. Next number: ...` (or `{serial()}` for the default counter), along with
+controls for start value, step, zero padding, prefix, and suffix.
 
 ## A Parametric Frame
 

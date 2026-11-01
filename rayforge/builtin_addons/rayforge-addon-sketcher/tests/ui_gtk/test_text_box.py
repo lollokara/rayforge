@@ -20,7 +20,10 @@ from sketcher.core.entities import TextBoxEntity
 from sketcher.ui_gtk.renderer import SketchRenderer
 from sketcher.ui_gtk.sketchelement import SketchElement
 from sketcher.ui_gtk.tools import TextBoxTool
-from sketcher.ui_gtk.tools.text_box_tool import TextBoxState
+from sketcher.ui_gtk.tools.text_box_tool import (
+    DYNAMIC_TEXT_COLOR,
+    TextBoxState,
+)
 
 from rayforge.core.undo import HistoryManager
 
@@ -497,3 +500,146 @@ def test_font_change_when_not_editing_pushes_command(
     assert len(editor.history_manager.undo_stack) == 1
     cmd = editor.history_manager.undo_stack[-1]
     assert isinstance(cmd, ModifyTextPropertyCommand)
+
+
+@pytest.mark.ui
+def test_define_text_box_path_uses_entity_geometry(
+    sketch_with_text_box, mocker
+):
+    """The canvas must draw what TextBoxEntity.to_geometry returns."""
+    sketch, tb_id = sketch_with_text_box
+    entity = sketch.registry.get_entity(tb_id)
+    renderer = Mock()
+    renderer.element.sketch = sketch
+    renderer._safe_get_point = sketch.registry.get_point
+    sentinel = object()
+    mocker.patch.object(TextBoxEntity, "to_geometry", return_value=sentinel)
+    to_cairo = mocker.patch("sketcher.ui_gtk.renderer.geometry_to_cairo")
+    ctx = Mock()
+
+    assert SketchRenderer._define_text_box_path(renderer, ctx, entity)
+
+    to_cairo.assert_called_once_with(sentinel, ctx)
+
+
+def _templated_box(sketch):
+    p_origin = sketch.add_point(0, 0)
+    p_width = sketch.add_point(20, 0)
+    p_height = sketch.add_point(0, 5)
+    return sketch.registry.add_text_box(
+        p_origin,
+        p_width,
+        p_height,
+        content="{width}",
+        font_config=FontConfig(family="sans-serif", size=10.0),
+    )
+
+
+def _editing_tool(element, tb_id):
+    tool = element.tools["text_box"]
+    element.active_tool_name = "text_box"
+    tool.start_editing(tb_id)
+    return tool
+
+
+@pytest.mark.ui
+def test_overlay_draws_entity_geometry_for_styled_box(
+    element_with_text_box, mock_cairo_context, mocker
+):
+    element, tb_id = element_with_text_box
+    entity = element.sketch.registry.get_entity(tb_id)
+    entity.set_style({"rotation": 30.0, "mirrored": True})
+    tool = _editing_tool(element, tb_id)
+    to_cairo = mocker.patch(
+        "sketcher.ui_gtk.tools.text_box_tool.geometry_to_cairo"
+    )
+
+    tool.draw_overlay(mock_cairo_context)
+
+    drawn = to_cairo.call_args_list[0].args[0]
+    expected = entity.to_geometry(
+        element.sketch.registry, resolved_content=tool.text_buffer
+    )
+    assert drawn.rect() == pytest.approx(expected.rect())
+    assert to_cairo.call_count == 1
+    assert mock_cairo_context.fill.call_count == 1
+
+
+@pytest.mark.ui
+def test_overlay_draws_resolved_value_with_dynamic_colour(
+    element_with_text_box, mock_cairo_context, mocker
+):
+    element, _ = element_with_text_box
+    sketch = element.sketch
+    sketch.set_param("width", 5.0)
+    sketch.solve()
+    tb_id = _templated_box(sketch)
+    entity = sketch.registry.get_entity(tb_id)
+    tool = _editing_tool(element, tb_id)
+    to_cairo = mocker.patch(
+        "sketcher.ui_gtk.tools.text_box_tool.geometry_to_cairo"
+    )
+
+    tool.draw_overlay(mock_cairo_context)
+
+    drawn = to_cairo.call_args_list[0].args[0]
+    expected = entity.to_geometry(sketch.registry, resolved_content="5.0")
+    assert drawn.rect() == pytest.approx(expected.rect())
+    mock_cairo_context.set_source_rgb.assert_any_call(*DYNAMIC_TEXT_COLOR)
+    assert sketch._resolved_text_cache.get(tb_id, ("", None))[1] in (
+        None,
+        "5.0",
+    )
+
+
+@pytest.mark.ui
+def test_resize_uses_resolved_text(element_with_text_box):
+    element, _ = element_with_text_box
+    sketch = element.sketch
+    sketch.set_param("width", 5.0)
+    sketch.solve()
+    tb_id = _templated_box(sketch)
+    entity = sketch.registry.get_entity(tb_id)
+    tool = _editing_tool(element, tb_id)
+
+    tool._resize_box_to_fit_text()
+
+    p_origin = sketch.registry.get_point(entity.origin_id)
+    p_width = sketch.registry.get_point(entity.width_id)
+    assert p_width.x - p_origin.x == pytest.approx(
+        entity.get_natural_size("5.0")[0]
+    )
+
+
+@pytest.mark.ui
+def test_empty_box_resizes_to_placeholder(element_with_empty_text_box):
+    element, tb_id = element_with_empty_text_box
+    entity = element.sketch.registry.get_entity(tb_id)
+    tool = _editing_tool(element, tb_id)
+
+    tool._resize_box_to_fit_text()
+
+    registry = element.sketch.registry
+    p_origin = registry.get_point(entity.origin_id)
+    p_width = registry.get_point(entity.width_id)
+    p_height = registry.get_point(entity.height_id)
+    width, height = entity.placeholder_size()
+    assert p_width.x - p_origin.x == pytest.approx(width)
+    assert abs(p_height.y - p_origin.y) == pytest.approx(height)
+
+
+@pytest.mark.ui
+def test_canvas_draws_dynamic_subset_in_accent_colour(
+    sketch_with_text_box, mock_element, mock_cairo_context
+):
+    sketch, _ = sketch_with_text_box
+    sketch.set_param("width", 5.0)
+    _templated_box(sketch)
+    sketch.solve()
+    mock_element.sketch = sketch
+    mock_element.active_tool_name = "select"
+    mock_element.tools = {}
+
+    SketchRenderer(mock_element).draw(mock_cairo_context)
+
+    mock_cairo_context.set_source_rgb.assert_any_call(*DYNAMIC_TEXT_COLOR)

@@ -1630,6 +1630,56 @@ class Sketch(IAsset, IGeometryProvider):
             elif constraint.status == ConstraintStatus.CONFLICTING:
                 constraint.status = ConstraintStatus.VALID
 
+    def _template_context(self) -> dict:
+        """The values and template functions content expressions are
+        evaluated against."""
+        # Use the cached context from solve() when available,
+        # avoiding a fresh ParameterContext per text box.
+        if self._solved_ctx is not None:
+            return self._solved_ctx
+        solve_params = ParameterContext.from_dict(self.params.to_dict())
+        initial_values = dict(self._last_solve_values)
+        if not initial_values and self.input_parameters:
+            initial_values.update(self.input_parameters.get_values())
+        solve_params.evaluate_all(initial_values=initial_values)
+        ctx = solve_params.get_all_values()
+        ctx.update(get_template_functions())
+        return ctx
+
+    def resolve_content_segments(self, content: str) -> list[tuple[str, bool]]:
+        """Resolves arbitrary *content* into (text, is_dynamic) pieces
+        without touching the per-entity cache. Falls back to the raw
+        text when resolution fails."""
+        if not content:
+            return []
+        try:
+            return ExpressionMap(self._template_context()).segments(content)
+        except (KeyError, IndexError, ValueError) as e:
+            logger.debug(f"Template resolution failed for '{content}': {e}")
+            return [(content, False)]
+
+    def resolve_content(self, content: str) -> str:
+        """Resolves arbitrary *content* like _resolve_text_content but
+        without reading or writing the per-entity cache."""
+        return "".join(
+            text for text, _ in self.resolve_content_segments(content)
+        )
+
+    def resolve_entity_segments(
+        self, entity: TextBoxEntity
+    ) -> list[tuple[str, bool]]:
+        """Resolved pieces of the entity's content, consistent with the
+        cached text the exported geometry uses; when a volatile
+        expression resolves differently, the cached text is returned
+        as a single static piece."""
+        resolved = self._resolve_text_content(entity)
+        if resolved is None:
+            return [(entity.content, False)] if entity.content else []
+        segments = self.resolve_content_segments(entity.content)
+        if "".join(text for text, _ in segments) != resolved:
+            return [(resolved, False)]
+        return segments
+
     def _resolve_text_content(self, entity: TextBoxEntity) -> str | None:
         """
         Resolves template expressions in a text box's content using
@@ -1654,20 +1704,7 @@ class Sketch(IAsset, IGeometryProvider):
             return None
 
         try:
-            # Use the cached context from solve() when available,
-            # avoiding a fresh ParameterContext per text box.
-            if self._solved_ctx is not None:
-                ctx = self._solved_ctx
-            else:
-                solve_params = ParameterContext.from_dict(
-                    self.params.to_dict()
-                )
-                initial_values = dict(self._last_solve_values)
-                if not initial_values and self.input_parameters:
-                    initial_values.update(self.input_parameters.get_values())
-                solve_params.evaluate_all(initial_values=initial_values)
-                ctx = solve_params.get_all_values()
-                ctx.update(get_template_functions())
+            ctx = self._template_context()
 
             expr_map = ExpressionMap(ctx)
             resolved = expr_map.format(entity.content)
@@ -1886,7 +1923,7 @@ class Sketch(IAsset, IGeometryProvider):
                 continue
             if not entity.construction and isinstance(entity, TextBoxEntity):
                 resolved = self._resolve_text_content(entity)
-                text_geo = entity.to_geometry(
+                text_geo = entity.to_fill_geometry(
                     self.registry, resolved_content=resolved
                 )
                 if text_geo:

@@ -34,8 +34,89 @@ Le panneau **Propriétés de la police** de la barre latérale contrôle l'appar
 sélectionnée sur le canevas :
 
 - **Famille de police** — choisissez parmi les polices système installées.
+- **Police personnalisée** — choisissez une police que vous avez installée vous-même (voir
+  [Polices personnalisées](#custom-fonts)).
 - **Taille de la police** — en points.
 - Interrupteurs **Gras** et **Italique**.
+
+## Transformations de texte {#text-transforms}
+
+Le même panneau permet de modifier la disposition du texte à l'intérieur de son cadre :
+
+- **Miroir** — inverse le texte de gauche à droite, pour graver au dos d'un matériau transparent.
+- **Inverser les caractères** — écrit les caractères dans l'ordre inverse sans les retourner.
+- **Vertical** — empile les caractères droits de haut en bas.
+- **Rotation** — fait tourner le texte autour du centre de son cadre. Le cadre lui-même reste
+  horizontal.
+- **À l'envers** — un raccourci pour une rotation de 180°.
+
+Tant que l'une de ces options est active, vous pouvez toujours taper dans la zone de texte, mais
+cliquer ne place plus le curseur dans le texte.
+
+## Texte knock-out {#knock-out-text}
+
+Activez **Knock-out** pour graver une plaque en laissant le texte en réserve. La plaque correspond
+au cadre de texte agrandi de la **Marge de knock-out** de chaque côté. Le contour contient la plaque
+et les lettres ; le remplissage couvre la plaque à l'exception des lettres.
+
+Les parties intérieures des lettres telles que O, A et B ne sont pas conservées, si bien que le
+texte knock-out est destiné à la gravure, non à la découpe de pochoirs.
+
+## Texte sur un chemin {#text-on-a-path}
+
+Le texte peut suivre une ligne, un arc, un cercle ou une courbe :
+
+1. Sélectionnez la zone de texte avec la forme qu'elle doit suivre.
+2. Activez **Suivre le chemin** dans le panneau Propriétés de la police.
+
+- **Côté du chemin** — **Extérieur** place le texte à gauche du sens du chemin ; **Intérieur** le
+  place de l'autre côté et inverse le sens de lecture, de sorte que le texte à l'intérieur d'un
+  cercle se lise à l'endroit en bas.
+- **Alignement du chemin** — début, centre ou fin du chemin.
+- **Décalage du chemin** — décale le texte le long du chemin.
+- **Texte inférieur** — sur un cercle, une deuxième ligne de texte centrée en bas à l'intérieur,
+  tandis que le texte principal est centré en haut à l'extérieur. Les deux se lisent à l'endroit, ce
+  qui permet de créer un tampon ou un sceau rond.
+
+Pour libérer le texte, sélectionnez uniquement la zone de texte et activez à nouveau **Suivre le
+chemin**. Si la forme est supprimée, le texte revient dans son cadre.
+
+Le texte sur un chemin conserve sa taille de police, et miroir, vertical, rotation et knock-out ne
+s'appliquent pas à lui. Un chemin est une forme unique ; le texte ne se poursuit pas d'une ligne ou
+d'un arc au suivant.
+
+## Polices personnalisées {#custom-fonts}
+
+Utilisez **Installer la police…** pour ajouter un fichier `.ttf` ou `.otf`. Les polices installées
+apparaissent dans la liste **Police personnalisée** sur chaque esquisse, et **Supprimer la police
+personnalisée** supprime celle sélectionnée.
+
+Les polices sont stockées sur votre ordinateur, pas dans le fichier de projet. Lorsqu'un projet
+utilise une police qui n'est pas installée, le panneau affiche **Police non installée** et une
+police de substitution est utilisée jusqu'à ce que vous installiez la police ou en choisissiez une
+autre.
+
+## Préréglages {#presets}
+
+Un préréglage enregistre la police et le style de texte, mais pas le texte lui-même ni le chemin
+qu'il suit. Saisissez un nom dans **Enregistrer comme préréglage** pour stocker les paramètres de la
+zone de texte sélectionnée, choisissez un nom dans **Préréglage** pour l'appliquer, et utilisez
+**Supprimer le préréglage** pour retirer le préréglage sélectionné. L'application d'un préréglage
+est une action d'annulation unique.
+
+## Numéros de série {#serial-numbers}
+
+**Insérer un numéro de série** ajoute `{serial()}` au texte, affiche le numéro suivant et explique
+que le compteur avance d'un pas chaque fois qu'un travail est envoyé à la machine ou exporté en
+G-code. Le cadrage, les aperçus et les travaux annulés ou échoués ne consomment pas de numéro.
+
+Les compteurs sont partagés entre tous les documents et sont gérés dans **Paramètres → Numéros de
+série**. La page des paramètres vous guide en trois étapes : créez un compteur, référencez-le avec
+`{serial("name")}` ou Insérer un numéro de série dans Propriétés de la police, et notez que le
+compteur avance une fois par travail plutôt que pour chaque copie sur le canevas. Chaque carte de
+compteur affiche `Use as {serial("name")}. Next number: ...` (ou `{serial()}` pour le compteur par
+défaut), ainsi que des commandes pour la valeur de départ, le pas, le remplissage de zéros, le
+préfixe et le suffixe.
 
 ## Un cadre paramétrique
 

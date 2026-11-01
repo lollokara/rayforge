@@ -113,27 +113,33 @@ funciones integradas de abajo, y se pueden registrar funciones personalizadas pa
 
 ### Funciones de plantilla integradas
 
-| Función         | Tipo retorno | Descripción                                          |
-| --------------- | ------------ | ---------------------------------------------------- |
-| `{today()}`     | `date`       | Fecha UTC actual (ej.: `2026-08-26`)                 |
-| `{date()}`      | `date`       | Alias de `today()`                                   |
-| `{now()}`       | `datetime`   | Fecha y hora UTC actuales                            |
-| `{time()}`      | `time`       | Hora UTC actual (ej.: `15:30:00.123456+00:00`)       |
-| `{timestamp()}` | `float`      | Marca de tiempo Unix (segundos desde época)          |
-| `{uuid4()}`     | `str`        | Cadena hexadecimal de 8 caracteres (ej.: `a1b2c3d4`) |
-| `{uuid8()}`     | `str`        | Alias de `uuid4()`                                   |
-| `{uuid()}`      | `str`        | Cadena UUID v4 completa (36 caracteres)              |
+| Función         | Tipo retorno | Descripción                                                             |
+| --------------- | ------------ | ----------------------------------------------------------------------- |
+| `{today()}`     | `date`       | Fecha UTC actual (ej.: `2026-08-26`)                                    |
+| `{date()}`      | `date`       | Alias de `today()`                                                      |
+| `{now()}`       | `datetime`   | Fecha y hora UTC actuales                                               |
+| `{time()}`      | `time`       | Hora UTC actual (ej.: `15:30:00.123456+00:00`)                          |
+| `{timestamp()}` | `float`      | Marca de tiempo Unix (segundos desde época)                             |
+| `{uuid4()}`     | `str`        | Cadena hexadecimal de 8 caracteres (ej.: `a1b2c3d4`)                    |
+| `{uuid8()}`     | `str`        | Alias de `uuid4()`                                                      |
+| `{uuid()}`      | `str`        | Cadena UUID v4 completa (36 caracteres)                                 |
+| `{serial()}`    | `str`        | Valor actual de un contador de serie; `{serial("name")}` selecciona uno |
 
 Entre los usos típicos se incluyen números de serie únicos en cada resolución (`Pieza #{uuid4()}`),
 etiquetas de dimensiones en vivo (`W={width:.1f} H={height:.1f}`), fechas en cada pieza
 (`Fecha: {today()}`), contadores de producción (`{name} - {count:.0f}uds`) o marcas de tiempo Unix
 para el registro de producción (`{timestamp():.0f}`).
 
+`serial()` lee un contador persistente que avanza una vez por cada trabajo enviado o exportado, de
+modo que cada pieza obtiene el siguiente número. Consulte
+[Números de serie](text-box.md#serial-numbers).
+
 ## Funciones de plantilla personalizadas {#custom-template-functions}
 
 Puede registrar sus propias funciones para usar dentro de las plantillas de los cuadros de texto.
 Esto es útil para obtener números de serie de una base de datos, leer datos externos o generar
-etiquetas personalizadas.
+etiquetas personalizadas. Para un número correlativo simple no necesita un script: use la función
+integrada `serial()`.
 
 ### Escribir el script de registro
 

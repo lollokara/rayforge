@@ -106,25 +106,30 @@ registered for them (see [below](#custom-template-functions)).
 
 ### Built-in template functions
 
-| Function        | Return type | Description                                      |
-| --------------- | ----------- | ------------------------------------------------ |
-| `{today()}`     | `date`      | Current UTC date (e.g., `2026-08-26`)            |
-| `{date()}`      | `date`      | Alias for `today()`                              |
-| `{now()}`       | `datetime`  | Current UTC date and time                        |
-| `{time()}`      | `time`      | Current UTC time (e.g., `15:30:00.123456+00:00`) |
-| `{timestamp()}` | `float`     | Unix timestamp (seconds since epoch)             |
-| `{uuid4()}`     | `str`       | 8-character hex string (e.g., `a1b2c3d4`)        |
-| `{uuid8()}`     | `str`       | Alias for `uuid4()`                              |
-| `{uuid()}`      | `str`       | Full UUID v4 string (36 chars)                   |
+| Function        | Return type | Description                                                       |
+| --------------- | ----------- | ----------------------------------------------------------------- |
+| `{today()}`     | `date`      | Current UTC date (e.g., `2026-08-26`)                             |
+| `{date()}`      | `date`      | Alias for `today()`                                               |
+| `{now()}`       | `datetime`  | Current UTC date and time                                         |
+| `{time()}`      | `time`      | Current UTC time (e.g., `15:30:00.123456+00:00`)                  |
+| `{timestamp()}` | `float`     | Unix timestamp (seconds since epoch)                              |
+| `{uuid4()}`     | `str`       | 8-character hex string (e.g., `a1b2c3d4`)                         |
+| `{uuid8()}`     | `str`       | Alias for `uuid4()`                                               |
+| `{uuid()}`      | `str`       | Full UUID v4 string (36 chars)                                    |
+| `{serial()}`    | `str`       | Current value of a serial counter; `{serial("name")}` selects one |
 
 Typical uses include unique serial numbers per solve (`Part # {uuid4()}`), live dimension labels
 (`W={width:.1f} H={height:.1f}`), date stamps (`Date: {today()}`), production counters
 (`{name} - {count:.0f}pcs`), or Unix timestamps for production logging (`{timestamp():.0f}`).
 
+`serial()` reads a persistent counter that advances once for every job that is sent or exported, so
+every part gets the next number. See [Serial Numbers](text-box.md#serial-numbers).
+
 ## Custom template functions
 
 You can register your own functions to use inside text box templates. This is useful for pulling
-serial numbers from a database, reading external data, or generating custom labels.
+serial numbers from a database, reading external data, or generating custom labels. For a simple
+running number you do not need a script: use the built-in `serial()` function.
 
 ### Writing the registration script
 

@@ -1,4 +1,5 @@
 import pytest
+from raygeo.geo.shape.text import FontConfig
 from sketcher.core import Sketch
 from sketcher.core.entities import Line
 from sketcher.core.sketch import Fill
@@ -208,3 +209,21 @@ def test_get_loop_at_point_open_path(sketch):
     loop = sketch.get_loop_at_point(50, 30)
 
     assert loop is None
+
+
+def test_get_fill_render_data_knockout_text(sketch):
+    origin = sketch.add_point(0, 0)
+    width_pt = sketch.add_point(20, 0)
+    height_pt = sketch.add_point(0, 8)
+    box = sketch.registry.get_entity(
+        sketch.registry.add_text_box(
+            origin, width_pt, height_pt, "HI", FontConfig()
+        )
+    )
+    plain_rect = sketch.get_fill_render_data()[0].geometry.rect()
+
+    box.set_style({"knockout": True, "knockout_margin": 2.0})
+    knock_rect = sketch.get_fill_render_data()[0].geometry.rect()
+
+    assert knock_rect[0] < plain_rect[0]
+    assert knock_rect == pytest.approx((-2.0, -2.0, 22.0, 10.0), abs=1e-6)

@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import cairo
 from gi.repository import PangoCairo
 from raygeo.geo import Geometry, Matrix
-from raygeo.geo.shape.text import text_to_geometry
 from raygeo.geo.types import Point as GeoPoint
 
 from rayforge.image.geo_renderer import geometry_to_cairo
@@ -35,6 +34,7 @@ from ..core.entities import (
 from ..core.sketch import FillStyle
 from ..core.types import EntityID
 from .tools import PathTool, TextBoxTool
+from .tools.text_box_tool import DYNAMIC_TEXT_COLOR
 
 if TYPE_CHECKING:
     from .sketchelement import SketchElement
@@ -307,7 +307,12 @@ class SketchRenderer:
                 and isinstance(entity, TextBoxEntity)
                 and entity.fill_color is not None
             ):
-                text_geo = entity.to_geometry(self.element.sketch.registry)
+                text_geo = entity.to_fill_geometry(
+                    self.element.sketch.registry,
+                    resolved_content=self.element.sketch._resolve_text_content(
+                        entity
+                    ),
+                )
                 if text_geo:
                     ctx.new_path()
                     geometry_to_cairo(text_geo, ctx)
@@ -413,6 +418,7 @@ class SketchRenderer:
                         is_sketch_fully_constrained,
                     )
                 ctx.fill()
+                self._draw_dynamic_text(ctx, entity)
             elif entity.construction:
                 scale = self.element.line_width / base_line_width
                 ctx.set_dash([5.0 / scale, 5.0 / scale])
@@ -592,25 +598,30 @@ class SketchRenderer:
         if not (p_origin and p_width and p_height):
             return False
 
-        natural_geo = text_to_geometry(
-            entity.content, font_config=entity.font_config
+        sketch = self.element.sketch
+        geometry_to_cairo(
+            entity.to_geometry(
+                sketch.registry,
+                resolved_content=sketch._resolve_text_content(entity),
+            ),
+            ctx,
         )
-        _, geo_min_y, _, geo_max_y = natural_geo.rect()
-        text_width = entity.font_config.get_text_width(entity.content)
-        advance_width = text_width or 1.0
-
-        transformed_geo = natural_geo.map_to_frame(
-            (p_origin.x, p_origin.y),
-            (p_width.x, p_width.y),
-            (p_height.x, p_height.y),
-            anchor_x=0.0,
-            stable_src_width=advance_width,
-            anchor_y=geo_min_y,
-            stable_src_height=geo_max_y - geo_min_y,
-        )
-
-        geometry_to_cairo(transformed_geo, ctx)
         return True
+
+    def _draw_dynamic_text(
+        self, ctx: cairo.Context, entity: TextBoxEntity
+    ) -> None:
+        """Overdraws the characters that come from template
+        expressions in an accent colour. On-screen only."""
+        sketch = self.element.sketch
+        dynamic_geo = entity.to_dynamic_geometry(
+            sketch.registry, sketch.resolve_entity_segments(entity)
+        )
+        if dynamic_geo.is_empty():
+            return
+        geometry_to_cairo(dynamic_geo, ctx)
+        ctx.set_source_rgb(*DYNAMIC_TEXT_COLOR)
+        ctx.fill()
 
     # --- Overlays (Constraints & Junctions) ---
 

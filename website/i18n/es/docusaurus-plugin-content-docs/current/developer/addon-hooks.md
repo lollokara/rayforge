@@ -174,6 +174,19 @@ def on_job_resumed(status):
 @hookimpl
 def on_job_finished(status, outcome, message=""):
     subprocess.Popen(["/usr/local/bin/notify-ha", outcome.name.lower()])
+
+### `job_dispatched(doc, kind)`
+
+Se llama en el hilo principal después de que un trabajo se haya transferido con éxito. `kind` es
+`"send"` cuando la máquina ejecutó un trabajo enviado y `"export"` cuando se escribió G-code en un
+archivo. El encuadre, las pruebas con puntero, los trabajos fallidos o vacíos, las comprobaciones de
+cordura y las vistas previas no lo llaman. Úselo para cualquier cosa que deba ocurrir una vez por
+cada pieza producida, como hacer avanzar un contador.
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
 ```
 
 ## Hooks de Registro
@@ -392,6 +405,10 @@ La versión actual de API es 24. Esto es lo que cambió en versiones recientes:
 **La versión 24** agregó los hooks de monitoreo de trabajos `on_job_started`, `on_job_updated`,
 `on_job_paused`, `on_job_resumed` y `on_job_finished`, además de la API de consulta
 `Machine.current_job`.
+
+La versión actual de API es 22. Esto es lo que cambió en versiones recientes:
+
+**La versión 22** agregó `job_dispatched`.
 
 **La versión 9** agregó `main_window_ready`, `register_exporters`, `register_importers` y
 `register_renderers`.

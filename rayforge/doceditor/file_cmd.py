@@ -1062,6 +1062,9 @@ class FileCmd:
                         name=file_path.name
                     )
                     self._editor.notification_requested.send(self, message=msg)
+                    get_context().plugin_mgr.hook.job_dispatched(
+                        doc=self._editor.doc, kind="export"
+                    )
 
             except Exception as e:
                 logger.error(

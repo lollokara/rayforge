@@ -29,11 +29,14 @@ class ModifyTextPropertyCommand(SketchChangeCommand):
         text_entity_id: EntityID,
         new_content: str,
         new_font_config: FontConfig,
+        new_style: dict[str, Any] | None = None,
     ):
         super().__init__(sketch, _("Modify Text Property"))
         self.text_entity_id = text_entity_id
         self.new_content = new_content
         self.new_font_config = new_font_config
+        self.new_style = new_style
+        self.old_style: dict[str, Any] = {}
         self.old_content = ""
         self.old_font_config: FontConfig | None = None
         self.old_point_positions: dict[EntityID, GeoPoint] = {}
@@ -107,6 +110,7 @@ class ModifyTextPropertyCommand(SketchChangeCommand):
 
         self.old_content = text_entity.content
         self.old_font_config = text_entity.font_config.copy()
+        self.old_style = text_entity.get_style()
         p_width = self.sketch.registry.get_point(text_entity.width_id)
         p_height = self.sketch.registry.get_point(text_entity.height_id)
         self.old_point_positions = {
@@ -143,6 +147,8 @@ class ModifyTextPropertyCommand(SketchChangeCommand):
         # Update the entity's content first.
         text_entity.content = self.new_content
         text_entity.font_config = self.new_font_config.copy()
+        if self.new_style is not None:
+            text_entity.set_style(self.new_style)
 
         # If the content is now empty, remove the entire entity.
         if not self.new_content:
@@ -273,6 +279,8 @@ class ModifyTextPropertyCommand(SketchChangeCommand):
         text_entity.content = self.old_content
         if self.old_font_config is not None:
             text_entity.font_config = self.old_font_config.copy()
+        if self.new_style is not None:
+            text_entity.set_style(self.old_style)
 
         for pid, (x, y) in self.old_point_positions.items():
             p = self.sketch.registry.get_point(pid)

@@ -159,6 +159,17 @@ def on_job_resumed(status):
 @hookimpl
 def on_job_finished(status, outcome, message=""):
     subprocess.Popen(["/usr/local/bin/notify-ha", outcome.name.lower()])
+
+### `job_dispatched(doc, kind)`
+
+在作业成功递交后在主线程上调用。当机器运行发送的作业时，`kind` 为
+`"send"`；当 G 代码被写入文件时，`kind` 为
+`"export"`。寻边对焦、指针模拟运行、失败或空作业、健全性检查和预览不会调用它。将其用于应该在每个生产零件上发生一次的操作，例如递增计数器。
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
 ```
 
 ## 注册钩子
@@ -361,6 +372,10 @@ def transformer_settings_loaded(dialog, step, transformer):
 
 **版本 24** 添加了作业监控钩子 `on_job_started`、`on_job_updated`、`on_job_paused`、
 `on_job_resumed` 和 `on_job_finished`，以及 `Machine.current_job` 轮询 API。
+
+当前 API 版本是 22。以下是最近版本的变更内容：
+
+**版本 22** 添加了 `job_dispatched`。
 
 **版本 9** 添加了 `main_window_ready`、`register_exporters`、`register_importers` 和
 `register_renderers`。

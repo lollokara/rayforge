@@ -5,8 +5,9 @@ import math
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from ..entities import Arc, Bezier, Line
+from ..entities import Arc, Bezier, Circle, Line
 from ..entity_group import EntityGroup
+from ..polyline import cumulative_lengths, point_at_arclength
 from .base import (
     Array,
     ArrayStrategy,
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class CurveAlongArrayStrategy(ArrayStrategy):
     """
-    Distributes copies along a guide path (a Line, Arc or Bezier).
+    Distributes copies along a guide path (a Line, Arc, Circle or Bezier).
 
     The path is sampled at equal arc-length intervals (after an
     optional offset from the start). The template member is placed
@@ -177,11 +178,11 @@ def sample_path(
     if entity is None:
         return []
 
-    polyline = _polyline_for(entity, registry)
+    polyline = polyline_for(entity, registry)
     if len(polyline) < 2:
         return []
 
-    cum = _cumulative_lengths(polyline)
+    cum = cumulative_lengths(polyline)
     total = cum[-1]
     if total <= 1e-9:
         return []
@@ -194,13 +195,13 @@ def sample_path(
     samples: list[tuple[tuple[float, float], float]] = []
     for j in range(count):
         s = offset + usable * j / (count - 1)
-        point, tangent = _point_at_arclength(polyline, cum, s)
+        point, tangent = point_at_arclength(polyline, cum, s)
         angle = math.atan2(tangent[1], tangent[0])
         samples.append((point, angle))
     return samples
 
 
-def _polyline_for(
+def polyline_for(
     entity: Entity, registry: EntityRegistry
 ) -> list[tuple[float, float]]:
     def p(pid):
@@ -262,57 +263,21 @@ def _polyline_for(
             pts.append((x, y))
         return pts
 
+    if isinstance(entity, Circle):
+        c = p(entity.center_idx)
+        start = p(entity.radius_pt_idx)
+        radius = math.hypot(start[0] - c[0], start[1] - c[1])
+        start_a = math.atan2(start[1] - c[1], start[0] - c[0])
+        segments = 96
+        return [
+            (
+                c[0] + radius * math.cos(start_a + 2 * math.pi * i / segments),
+                c[1] + radius * math.sin(start_a + 2 * math.pi * i / segments),
+            )
+            for i in range(segments + 1)
+        ]
+
     return []
-
-
-def _cumulative_lengths(
-    polyline: list[tuple[float, float]],
-) -> list[float]:
-    cum = [0.0]
-    for i in range(1, len(polyline)):
-        dx = polyline[i][0] - polyline[i - 1][0]
-        dy = polyline[i][1] - polyline[i - 1][1]
-        cum.append(cum[-1] + math.hypot(dx, dy))
-    return cum
-
-
-def _point_at_arclength(
-    polyline: list[tuple[float, float]],
-    cum: list[float],
-    s: float,
-) -> tuple[tuple[float, float], tuple[float, float]]:
-    """Returns (point, unit_tangent) at arc length ``s`` along the path."""
-    if s <= 0.0:
-        dx = polyline[1][0] - polyline[0][0]
-        dy = polyline[1][1] - polyline[0][1]
-        n = math.hypot(dx, dy) or 1.0
-        return polyline[0], (dx / n, dy / n)
-    if s >= cum[-1]:
-        a = polyline[-2]
-        b = polyline[-1]
-        dx = b[0] - a[0]
-        dy = b[1] - a[1]
-        n = math.hypot(dx, dy) or 1.0
-        return b, (dx / n, dy / n)
-
-    # Binary search for the segment containing s.
-    lo, hi = 0, len(cum) - 1
-    while lo < hi:
-        mid = (lo + hi) // 2
-        if cum[mid] < s:
-            lo = mid + 1
-        else:
-            hi = mid
-    seg = max(1, lo)
-    a = polyline[seg - 1]
-    b = polyline[seg]
-    seg_len = cum[seg] - cum[seg - 1]
-    t = (s - cum[seg - 1]) / seg_len if seg_len > 0 else 0.0
-    point = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
-    dx = b[0] - a[0]
-    dy = b[1] - a[1]
-    n = math.hypot(dx, dy) or 1.0
-    return point, (dx / n, dy / n)
 
 
 def path_length(
@@ -323,10 +288,10 @@ def path_length(
     entity = registry.get_entity(path_entity_id)
     if entity is None:
         return 0.0
-    polyline = _polyline_for(entity, registry)
+    polyline = polyline_for(entity, registry)
     if len(polyline) < 2:
         return 0.0
-    return _cumulative_lengths(polyline)[-1]
+    return cumulative_lengths(polyline)[-1]
 
 
 def _resolve_count(

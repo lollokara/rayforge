@@ -98,6 +98,7 @@ msgstr ""
 
 #: sketcher/core/constraints/vertical.py
 #: sketcher/ui_gtk/tools/vertical_constraint_tool.py
+#: sketcher/ui_gtk/font_properties.py
 msgid "Vertical"
 msgstr ""
 
@@ -919,4 +920,212 @@ msgstr ""
 
 #: sketcher/image/importer.py
 msgid "Failed to load sketch structure: {}"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Mirror"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Reverse Characters"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Upside Down"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Rotation"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out Margin"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Follow Path"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Side"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Outside"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Inside"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Alignment"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Start"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Center"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "End"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Offset"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bottom Text"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bind the text to the selected shape"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Following a path. Activate to release"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Select the text box together with a line, arc, circle or curve"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Not Installed"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "A substitute font is used. Install the font or pick another."
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Custom Font"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font…"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Remove Custom Font"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "None"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid "Could not install {name}"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Files"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Preset"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Save as Preset"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Delete Preset"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Choose…"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Insert Serial Number"
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Counters are managed in Settings"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Serial Numbers"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Counters advance once for every job sent to the machine or exported. Use them in a text box with {serial(\"name\")}."
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "New Counter Name"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Current Value"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Step"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Zero Padding"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Prefix"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Suffix"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Reset to Start"
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Delete Counter"
+msgstr ""
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Create a counter below.\n"
+"2. Type {serial(\"name\")} into a text box, or use Insert Serial Number in "
+"Font Properties.\n"
+"3. The counter goes up by one each time a job is sent to the machine or "
+"exported, not for every copy on the canvas.\n"
+"{serial()} without a name uses the counter called \"default\", which is "
+"created after the first job."
+msgstr ""
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
 msgstr ""

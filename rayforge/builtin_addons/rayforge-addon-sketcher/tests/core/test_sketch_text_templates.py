@@ -1,9 +1,15 @@
 from datetime import datetime, timezone
 from typing import cast
 
+import pytest
 from raygeo.geo.shape.text import FontConfig
 from sketcher.core import Sketch
 from sketcher.core.entities.text_box import TextBoxEntity
+from sketcher.core.serial import SerialCounter, advance, save_counters
+from sketcher.core.template_functions import (
+    get_template_functions,
+    unregister_template_function,
+)
 
 from rayforge.core.varset import FloatVar, Var
 
@@ -292,10 +298,7 @@ def test_resolve_date_alias():
 
 def test_register_template_function():
     """Addons can register custom template functions."""
-    from sketcher.core.template_functions import (
-        register_template_function,
-        unregister_template_function,
-    )
+    from sketcher.core.template_functions import register_template_function
 
     register_template_function("greet", lambda: "hello")
     try:
@@ -310,11 +313,7 @@ def test_register_template_function():
 
 def test_unregister_template_function():
     """Unregistering removes a custom function; built-ins remain."""
-    from sketcher.core.template_functions import (
-        get_template_functions,
-        register_template_function,
-        unregister_template_function,
-    )
+    from sketcher.core.template_functions import register_template_function
 
     register_template_function("tmp", lambda: "x")
     assert "tmp" in get_template_functions()
@@ -326,10 +325,99 @@ def test_unregister_template_function():
 
 def test_unregister_builtin_is_noop():
     """Built-in functions cannot be removed."""
-    from sketcher.core.template_functions import (
-        get_template_functions,
-        unregister_template_function,
-    )
-
     unregister_template_function("today")
     assert "today" in get_template_functions()
+
+
+@pytest.fixture
+def serial_dir(tmp_path, monkeypatch):
+    monkeypatch.setattr("rayforge.config.ADDON_DATA_DIR", tmp_path)
+    return tmp_path
+
+
+def test_serial_resolves_current_value(serial_dir):
+    save_counters(
+        {"batch": SerialCounter("batch", value=7, padding=3, prefix="SN")}
+    )
+    s = Sketch()
+    box = _add_text_box(s, '{serial("batch")}')
+    s.solve()
+    assert s._resolve_text_content(box) == "SN007"
+
+
+def test_serial_default_counter(serial_dir):
+    s = Sketch()
+    box = _add_text_box(s, "No. {serial()}")
+    s.solve()
+    assert s._resolve_text_content(box) == "No. 1"
+
+
+def test_resolving_serial_does_not_advance(serial_dir):
+    s = Sketch()
+    box = _add_text_box(s, "{serial()}")
+    for _ in range(3):
+        s.solve()
+        assert s._resolve_text_content(box) == "1"
+    assert not (serial_dir / "sketcher" / "serials.json").exists()
+
+
+def test_serial_changes_after_advance_and_re_solve(serial_dir):
+    s = Sketch()
+    box = _add_text_box(s, "{serial()}")
+    s.solve()
+    assert s._resolve_text_content(box) == "1"
+
+    advance(["default"])
+    assert s._resolve_text_content(box) == "1"
+
+    s.solve()
+    assert s._resolve_text_content(box) == "2"
+
+
+def test_serial_is_a_protected_builtin(serial_dir):
+    unregister_template_function("serial")
+    assert "serial" in get_template_functions()
+
+
+def test_resolve_content_does_not_touch_cache():
+    s = Sketch()
+    s.set_param("width", 50.0)
+    box = _add_text_box(s, "W={width}")
+    s.solve()
+    assert s.resolve_content("N={width}") == "N=50.0"
+    assert s._resolved_text_cache == {}
+    assert s._resolve_text_content(box) == "W=50.0"
+
+
+def test_resolve_content_segments_marks_dynamic_pieces():
+    s = Sketch()
+    s.set_param("width", 5.0)
+    s.solve()
+    assert s.resolve_content_segments("a{width}b") == [
+        ("a", False),
+        ("5.0", True),
+        ("b", False),
+    ]
+    assert s.resolve_content_segments("") == []
+
+
+def test_resolve_entity_segments_match_cached_text():
+    s = Sketch()
+    s.set_param("width", 5.0)
+    box = _add_text_box(s, "a{width}b")
+    s.solve()
+    segments = s.resolve_entity_segments(box)
+    assert "".join(t for t, _ in segments) == s._resolve_text_content(box)
+
+
+def test_exported_geometry_independent_of_dynamic_subset():
+    s = Sketch()
+    s.set_param("width", 5.0)
+    box = _add_text_box(s, "a{width}")
+    s.solve()
+    before = s.to_geometry().rect()
+    box.to_dynamic_geometry(s.registry, s.resolve_entity_segments(box))
+    assert s.to_geometry().rect() == before
+    assert not box.to_dynamic_geometry(
+        s.registry, s.resolve_entity_segments(box)
+    ).is_empty()

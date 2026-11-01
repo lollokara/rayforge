@@ -1,7 +1,11 @@
+import math
+from unittest.mock import Mock
+
 import pytest
 from raygeo.geo import Geometry
-from raygeo.geo.shape.text import FontConfig
+from raygeo.geo.shape.text import FontConfig, text_to_geometry
 from sketcher.core.entities import TextBoxEntity
+from sketcher.core.entities.text_box import STYLE_DEFAULTS
 from sketcher.core.registry import EntityRegistry
 
 
@@ -378,3 +382,421 @@ def test_serialization_preserves_template(registry):
 
     restored = TextBoxEntity.from_dict(data)
     assert restored.content == "Part {width:.1f}x{height:.1f}"
+
+
+_NON_DEFAULT_STYLE = {
+    "mirrored": True,
+    "reverse": True,
+    "vertical": True,
+    "rotation": 90.0,
+    "knockout": True,
+    "knockout_margin": 3.5,
+    "path_entity_id": 42,
+    "path_side": "inside",
+    "path_align": "start",
+    "path_offset": 1.5,
+    "content_bottom": "BOTTOM",
+}
+
+
+def test_style_defaults():
+    box = TextBoxEntity(1, 2, 3, 4, "x")
+    assert box.get_style() == STYLE_DEFAULTS
+
+
+def test_style_defaults_are_not_serialized():
+    data = TextBoxEntity(1, 2, 3, 4, "x").to_dict()
+    assert not set(STYLE_DEFAULTS) & set(data)
+
+
+def test_style_round_trip():
+    box = TextBoxEntity(1, 2, 3, 4, "x")
+    box.set_style(_NON_DEFAULT_STYLE)
+    restored = TextBoxEntity.from_dict(box.to_dict())
+    assert restored.get_style() == _NON_DEFAULT_STYLE
+
+
+def test_from_dict_without_style_keys_loads_defaults():
+    data = {
+        "id": 1,
+        "type": "text_box",
+        "origin_id": 2,
+        "width_id": 3,
+        "height_id": 4,
+        "content": "legacy",
+    }
+    assert TextBoxEntity.from_dict(data).get_style() == STYLE_DEFAULTS
+
+
+def test_from_dict_ignores_invalid_style_values():
+    data = TextBoxEntity(1, 2, 3, 4, "x").to_dict()
+    data.update(
+        {
+            "rotation": "abc",
+            "mirrored": 1,
+            "path_side": "sideways",
+            "path_entity_id": "7",
+            "knockout_margin": float("nan"),
+            "content_bottom": 5,
+        }
+    )
+    assert TextBoxEntity.from_dict(data).get_style() == STYLE_DEFAULTS
+
+
+def test_set_style_coerces_int_to_float():
+    box = TextBoxEntity(1, 2, 3, 4, "x")
+    box.set_style({"rotation": 180})
+    assert box.rotation == 180.0
+    assert isinstance(box.rotation, float)
+
+
+def test_style_changes_geometry_signature(registry):
+    box = _make_text_box(registry)
+    before = box.geometry_signature(registry)
+    box.mirrored = True
+    assert box.geometry_signature(registry) != before
+
+
+def test_rewrite_offsets_copies_style(registry):
+    template = _make_text_box(registry)
+    template.set_style({"mirrored": True, "rotation": 45.0})
+    copy_box = _make_text_box(registry, "Other")
+    copy_box.rewrite_offsets_from(template, Mock())
+    assert copy_box.get_style() == template.get_style()
+
+
+def _natural_box(registry, content="FL", **style):
+    """A text box whose frame equals the natural size of its content,
+    so map_to_frame is an identity scale."""
+    probe = TextBoxEntity(0, 0, 0, 0, content, FontConfig())
+    probe.set_style(style)
+    width, height = probe.get_natural_size()
+    p1 = registry.add_point(0, 0)
+    p2 = registry.add_point(width, 0)
+    p3 = registry.add_point(0, height)
+    box = registry.get_entity(
+        registry.add_text_box(p1, p2, p3, content, FontConfig())
+    )
+    box.set_style(style)
+    return box, width, height
+
+
+def _mean_x(geo):
+    xs = [x for ring in geo.to_polygons(0.01) for x, _ in ring]
+    return sum(xs) / len(xs)
+
+
+def test_default_style_matches_plain_layout(registry):
+    box, width, _ = _natural_box(registry)
+    plain = text_to_geometry("FL", font_config=FontConfig())
+    _, min_y, _, max_y = plain.rect()
+    expected = plain.map_to_frame(
+        (0.0, 0.0),
+        (width, 0.0),
+        (0.0, max_y - min_y),
+        anchor_x=0.0,
+        stable_src_width=FontConfig().get_text_width("FL"),
+        anchor_y=min_y,
+        stable_src_height=max_y - min_y,
+    )
+    assert box.to_geometry(registry).rect() == pytest.approx(expected.rect())
+
+
+def test_mirror_reflects_about_frame_centre(registry):
+    plain, width, _ = _natural_box(registry, "L")
+    mirrored, _, _ = _natural_box(registry, "L", mirrored=True)
+    r0 = plain.to_geometry(registry).rect()
+    r1 = mirrored.to_geometry(registry).rect()
+    assert r1[0] == pytest.approx(width - r0[2], abs=1e-6)
+    assert r1[2] == pytest.approx(width - r0[0], abs=1e-6)
+    assert (r1[1], r1[3]) == pytest.approx((r0[1], r0[3]))
+    plain_side = _mean_x(plain.to_geometry(registry)) - (r0[0] + r0[2]) / 2
+    mirror_side = _mean_x(mirrored.to_geometry(registry)) - (r1[0] + r1[2]) / 2
+    assert plain_side * mirror_side < 0
+
+
+def test_reverse_lays_out_characters_backwards(registry):
+    reversed_box, _, _ = _natural_box(registry, "AB", reverse=True)
+    plain_box, _, _ = _natural_box(registry, "BA")
+    assert reversed_box.to_geometry(registry).rect() == pytest.approx(
+        plain_box.to_geometry(registry).rect()
+    )
+
+
+def test_vertical_is_taller_than_wide(registry):
+    box, width, height = _natural_box(registry, "ABC", vertical=True)
+    assert height > width
+    min_x, min_y, max_x, max_y = box.to_geometry(registry).rect()
+    assert max_y - min_y > max_x - min_x
+
+
+def test_rotation_360_is_identity(registry):
+    plain, _, _ = _natural_box(registry)
+    turned, _, _ = _natural_box(registry, rotation=360.0)
+    assert turned.to_geometry(registry).rect() == pytest.approx(
+        plain.to_geometry(registry).rect(), abs=1e-6
+    )
+
+
+def test_rotation_180_is_point_reflection(registry):
+    plain, width, height = _natural_box(registry)
+    turned, _, _ = _natural_box(registry, rotation=180.0)
+    r0 = plain.to_geometry(registry).rect()
+    r1 = turned.to_geometry(registry).rect()
+    assert r1 == pytest.approx(
+        (width - r0[2], height - r0[3], width - r0[0], height - r0[1]),
+        abs=1e-6,
+    )
+
+
+def test_rotation_90_swaps_extents(registry):
+    plain, _, _ = _natural_box(registry)
+    turned, _, _ = _natural_box(registry, rotation=90.0)
+    r0 = plain.to_geometry(registry).rect()
+    r1 = turned.to_geometry(registry).rect()
+    assert r1[2] - r1[0] == pytest.approx(r0[3] - r0[1], abs=1e-6)
+    assert r1[3] - r1[1] == pytest.approx(r0[2] - r0[0], abs=1e-6)
+
+
+def test_blank_content_with_all_flags_does_not_raise(registry):
+    p1 = registry.add_point(0, 0)
+    p2 = registry.add_point(10, 0)
+    p3 = registry.add_point(0, 10)
+    box = registry.get_entity(
+        registry.add_text_box(p1, p2, p3, " ", FontConfig())
+    )
+    box.set_style(
+        {"mirrored": True, "reverse": True, "vertical": True, "rotation": 30.0}
+    )
+    assert isinstance(box.to_geometry(registry), Geometry)
+    assert box.get_natural_size()[0] >= 1.0
+
+
+def test_knockout_stroke_contains_plate_ring(registry):
+    box, width, height = _natural_box(
+        registry, "HI", knockout=True, knockout_margin=2.0
+    )
+    assert box.to_geometry(registry).rect() == pytest.approx(
+        (-2.0, -2.0, width + 2.0, height + 2.0), abs=1e-6
+    )
+
+
+def test_knockout_fill_is_plate_minus_glyphs(registry):
+    plain, width, height = _natural_box(registry, "HI")
+    box, _, _ = _natural_box(
+        registry, "HI", knockout=True, knockout_margin=2.0
+    )
+    glyph_area = abs(plain.to_fill_geometry(registry).area())
+    plate_area = (width + 4.0) * (height + 4.0)
+    assert abs(box.to_fill_geometry(registry).area()) == pytest.approx(
+        plate_area - glyph_area, rel=0.02
+    )
+
+
+def test_fill_geometry_without_knockout_equals_stroke(registry):
+    box, _, _ = _natural_box(registry, "HI")
+    assert box.to_fill_geometry(registry).rect() == pytest.approx(
+        box.to_geometry(registry).rect()
+    )
+
+
+def test_knockout_plate_rotates_with_text(registry):
+    box, width, height = _natural_box(
+        registry, "HI", knockout=True, knockout_margin=2.0, rotation=90.0
+    )
+    min_x, min_y, max_x, max_y = box.to_geometry(registry).rect()
+    assert max_x - min_x == pytest.approx(height + 4.0, abs=1e-6)
+    assert max_y - min_y == pytest.approx(width + 4.0, abs=1e-6)
+
+
+def _box_on_circle(registry, content="HHHH", radius=50.0, **style):
+    centre = registry.add_point(0.0, 0.0)
+    rim = registry.add_point(radius, 0.0)
+    circle_id = registry.add_circle(centre, rim)
+    box, _, _ = _natural_box(registry, content)
+    box.set_style({"path_entity_id": circle_id, **style})
+    return box, circle_id
+
+
+def _ring_radii(geo):
+    return [
+        math.hypot(x, y) for ring in geo.to_polygons(0.01) for x, y in ring
+    ]
+
+
+def test_text_on_circle_sits_on_top_outside(registry):
+    box, _ = _box_on_circle(registry)
+    geo = box.to_geometry(registry)
+    min_x, min_y, max_x, _ = geo.rect()
+    assert min(_ring_radii(geo)) >= 50.0 - 0.2
+    assert (min_x + max_x) / 2 == pytest.approx(0.0, abs=0.5)
+    assert min_y > 0.0
+
+
+def test_inside_text_on_circle_sits_at_bottom_inside(registry):
+    box, _ = _box_on_circle(registry, path_side="inside")
+    geo = box.to_geometry(registry)
+    assert max(_ring_radii(geo)) <= 50.0 + 0.2
+    assert geo.rect()[3] < 0.0
+
+
+def test_ring_layout_has_top_and_bottom_text(registry):
+    box, _ = _box_on_circle(registry, content_bottom="HHHH")
+    top_only, _ = _box_on_circle(registry)
+    geo = box.to_geometry(registry)
+    rings = len(geo.to_polygons(0.01))
+    assert rings == 2 * len(top_only.to_geometry(registry).to_polygons(0.01))
+    _, min_y, _, max_y = geo.rect()
+    assert max_y > 50.0
+    assert min_y < 0.0
+    assert min_y > -50.0 - 0.2
+
+
+def test_text_follows_line_from_its_first_point(registry):
+    p1 = registry.add_point(0.0, 100.0)
+    p2 = registry.add_point(200.0, 100.0)
+    line_id = registry.add_line(p1, p2)
+    box, _, _ = _natural_box(registry, "HI")
+    box.set_style({"path_entity_id": line_id, "path_align": "start"})
+    min_x, min_y, _, _ = box.to_geometry(registry).rect()
+    assert min_x < 5.0
+    assert min_y >= 100.0 - 0.01
+
+
+def test_text_follows_arc_from_its_start_point(registry):
+    centre = registry.add_point(0.0, 0.0)
+    start = registry.add_point(50.0, 0.0)
+    end = registry.add_point(0.0, 50.0)
+    arc_id = registry.add_arc(start, end, centre, cw=False)
+    box, _, _ = _natural_box(registry, "H")
+    box.set_style({"path_entity_id": arc_id, "path_align": "start"})
+    min_x, min_y, max_x, max_y = box.to_geometry(registry).rect()
+    centre_x, centre_y = (min_x + max_x) / 2, (min_y + max_y) / 2
+    assert math.hypot(centre_x - 50.0, centre_y) < math.hypot(
+        centre_x, centre_y - 50.0
+    )
+
+
+def test_missing_path_entity_falls_back_to_frame(registry):
+    plain, _, _ = _natural_box(registry, "HI")
+    bound, _, _ = _natural_box(registry, "HI")
+    bound.set_style({"path_entity_id": 987654})
+    assert bound.get_path_polyline(registry) is None
+    assert bound.to_geometry(registry).rect() == pytest.approx(
+        plain.to_geometry(registry).rect()
+    )
+
+
+def test_text_box_cannot_be_its_own_kind_of_path(registry):
+    other, _, _ = _natural_box(registry, "PATH")
+    bound, _, _ = _natural_box(registry, "HI")
+    bound.set_style({"path_entity_id": other.id})
+    assert bound.get_path_polyline(registry) is None
+
+
+def test_moving_the_path_changes_the_signature(registry):
+    box, circle_id = _box_on_circle(registry)
+    before = box.geometry_signature(registry)
+    circle = registry.get_entity(circle_id)
+    registry.get_point(circle.radius_pt_idx).x = 60.0
+    assert box.geometry_signature(registry) != before
+
+
+def test_path_points_are_not_text_box_points(registry):
+    box, circle_id = _box_on_circle(registry)
+    circle = registry.get_entity(circle_id)
+    assert circle.center_idx not in box.get_point_ids()
+
+
+def test_knockout_is_ignored_on_a_path(registry):
+    box, _ = _box_on_circle(registry, knockout=True)
+    assert box.get_plate_ring(registry) is None
+    assert box.to_fill_geometry(registry).rect() == pytest.approx(
+        box.to_geometry(registry).rect()
+    )
+
+
+def test_set_style_clamps_negative_knockout_margin(registry):
+    box = _make_text_box(registry)
+    box.set_style({"knockout_margin": -3.0})
+    assert box.knockout_margin == 0.0
+
+
+def test_placeholder_size_matches_single_h_geometry():
+    font = FontConfig()
+    box = TextBoxEntity(0, 0, 0, 0, "", font)
+    min_x, min_y, max_x, max_y = text_to_geometry("H", font_config=font).rect()
+    width, height = box.placeholder_size()
+    assert width == pytest.approx(max_x - min_x)
+    assert height == pytest.approx(max_y - min_y)
+    assert box.get_natural_size("") == box.placeholder_size()
+    assert width < 5.0 and height < 5.0
+
+
+_LAYOUT_STYLES = [
+    {},
+    {"mirrored": True},
+    {"reverse": True},
+    {"vertical": True},
+    {"rotation": 30.0},
+    {"mirrored": True, "reverse": True, "rotation": 15.0},
+]
+
+
+def _box_at(registry, content, **style):
+    p1 = registry.add_point(0, 0)
+    p2 = registry.add_point(30, 0)
+    p3 = registry.add_point(0, 8)
+    box = registry.get_entity(
+        registry.add_text_box(p1, p2, p3, content, FontConfig())
+    )
+    box.set_style(style)
+    return box
+
+
+@pytest.mark.parametrize("style", _LAYOUT_STYLES)
+def test_dynamic_geometry_all_dynamic_equals_full(registry, style):
+    box = _box_at(registry, "A12", **style)
+    full = box.to_geometry(registry, resolved_content="A12")
+    dyn = box.to_dynamic_geometry(registry, [("A12", True)])
+    assert dyn.rect() == pytest.approx(full.rect())
+
+
+@pytest.mark.parametrize("style", _LAYOUT_STYLES)
+def test_dynamic_geometry_overlays_full_subset(registry, style):
+    box = _box_at(registry, "AB12", **style)
+    segments = [("AB", False), ("12", True)]
+    full = box.to_geometry(registry, resolved_content="AB12")
+    dyn = box.to_dynamic_geometry(registry, segments)
+    static = box.to_dynamic_geometry(registry, [("AB", True), ("12", False)])
+    fx0, fy0, fx1, fy1 = full.rect()
+    dx0, dy0, dx1, dy1 = dyn.rect()
+    assert fx0 - 1e-6 <= dx0 and dx1 <= fx1 + 1e-6
+    assert fy0 - 1e-6 <= dy0 and dy1 <= fy1 + 1e-6
+    assert dyn.rect() != static.rect()
+
+
+def test_dynamic_geometry_without_dynamic_text_is_empty(registry):
+    box = _box_at(registry, "AB")
+    assert box.to_dynamic_geometry(registry, [("AB", False)]).is_empty()
+
+
+def test_dynamic_geometry_on_path_skips_static_chars(registry):
+    box = _box_at(registry, "AB12")
+    p1 = registry.add_point(0, -20)
+    p2 = registry.add_point(60, -20)
+    line = registry.add_line(p1, p2)
+    box.set_style({"path_entity_id": line})
+    segments = [("AB", False), ("12", True)]
+    full = box.to_geometry(registry, resolved_content="AB12")
+    dyn = box.to_dynamic_geometry(registry, segments)
+    assert not dyn.is_empty()
+    assert dyn.rect()[0] > full.rect()[0]
+
+
+def test_is_plain_layout(registry):
+    box = _box_at(registry, "A")
+    assert box.is_plain_layout()
+    for style in _LAYOUT_STYLES[1:5]:
+        box.set_style({**STYLE_DEFAULTS, **style})
+        assert not box.is_plain_layout()

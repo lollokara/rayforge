@@ -532,6 +532,8 @@ class GrblSerialSimpleDriver(Driver):
             self._job_running = False
             self._is_holding = False
             self._on_command_done = None
+            if not job_completed_successfully:
+                self.job_failed = True
             if job_completed_successfully:
                 self.job_finished.send(self)
                 logger.debug(

@@ -168,6 +168,19 @@ def on_job_resumed(status):
 @hookimpl
 def on_job_finished(status, outcome, message=""):
     subprocess.Popen(["/usr/local/bin/notify-ha", outcome.name.lower()])
+
+### `job_dispatched(doc, kind)`
+
+Викликається в головному потоці після успішної передачі завдання. `kind` має значення `"send"`, коли
+верстат запустив надіслане завдання, і `"export"`, коли G-код було записано у файл. Кадрування,
+холості прогони вказівника, невдалі або порожні завдання, перевірки працездатності та попередній
+перегляд не викликають його. Використовуйте його для всього, що має відбуватися один раз на
+вироблену деталь, наприклад, для переведення лічильника.
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
 ```
 
 ## Хуки реєстрації
@@ -383,6 +396,10 @@ def transformer_settings_loaded(dialog, step, transformer):
 
 **Версія 24** додала хуки моніторингу завдань `on_job_started`, `on_job_updated`, `on_job_paused`,
 `on_job_resumed` і `on_job_finished`, а також API опитування `Machine.current_job`.
+
+Поточна версія API — 22. Ось що змінилося в останніх версіях:
+
+**Версія 22** додала `job_dispatched`.
 
 **Версія 9** додала `main_window_ready`, `register_exporters`, `register_importers` та
 `register_renderers`.

@@ -98,6 +98,7 @@ msgstr "输入长度或表达式。"
 
 #: sketcher/core/constraints/vertical.py
 #: sketcher/ui_gtk/tools/vertical_constraint_tool.py
+#: sketcher/ui_gtk/font_properties.py
 msgid "Vertical"
 msgstr "垂直"
 
@@ -920,3 +921,218 @@ msgstr "草图文件是无效的JSON：{}"
 #: sketcher/image/importer.py
 msgid "Failed to load sketch structure: {}"
 msgstr "加载草图结构失败：{}"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Mirror"
+msgstr "镜像"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Reverse Characters"
+msgstr "反转字符"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Upside Down"
+msgstr "倒置"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Rotation"
+msgstr "旋转"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out"
+msgstr "镂空"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out Margin"
+msgstr "镂空边距"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Follow Path"
+msgstr "沿路径排列"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Side"
+msgstr "路径侧"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Outside"
+msgstr "外部"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Inside"
+msgstr "内部"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Alignment"
+msgstr "路径对齐"
+
+#: sketcher/ui_gtk/font_properties.py
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Start"
+msgstr "开始"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Center"
+msgstr "居中"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "End"
+msgstr "结束"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Offset"
+msgstr "路径偏移"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bottom Text"
+msgstr "底部文字"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bind the text to the selected shape"
+msgstr "将文字绑定到选定图形"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Following a path. Activate to release"
+msgstr "正在沿路径排列。点击以解除"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Select the text box together with a line, arc, circle or curve"
+msgstr "请同时选择文本框与直线、圆弧、圆或曲线"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Not Installed"
+msgstr "未安装字体"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "A substitute font is used. Install the font or pick another."
+msgstr "正在使用替代字体。请安装该字体或选择其他字体。"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Custom Font"
+msgstr "自定义字体"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font…"
+msgstr "安装字体…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Remove Custom Font"
+msgstr "删除自定义字体"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "None"
+msgstr "无"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid "Could not install {name}"
+msgstr "无法安装 {name}"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Files"
+msgstr "字体文件"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font"
+msgstr "安装字体"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Preset"
+msgstr "预设"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Save as Preset"
+msgstr "保存为预设"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Delete Preset"
+msgstr "删除预设"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Choose…"
+msgstr "选择…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Insert Serial Number"
+msgstr "插入序列号"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Counters are managed in Settings"
+msgstr "计数器在设置中管理"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Serial Numbers"
+msgstr "序列号"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Counters advance once for every job sent to the machine or exported. Use them in a text box with {serial(\"name\")}."
+msgstr "每发送到机器或导出一个作业，计数器递增一次。在文本框中使用 {serial(\"name\")}。"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "New Counter Name"
+msgstr "新计数器名称"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Current Value"
+msgstr "当前值"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Step"
+msgstr "步长"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Zero Padding"
+msgstr "补零"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Prefix"
+msgstr "前缀"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Suffix"
+msgstr "后缀"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Reset to Start"
+msgstr "重置为起始值"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Delete Counter"
+msgstr "删除计数器"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"向文本添加 {serial()}。每发送或导出一个作业，编号递增一。计数器在"
+"设置 > 序列号中管理。"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"下一个编号：{numbers}。每发送或导出一个作业，编号递增一。计数器在"
+"设置 > 序列号中管理。"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. 在下方创建计数器。\n"
+"2. 在文本框中输入 {serial(\"name\")}，或使用字体属性中的插入序列号。\n"
+"3. 每向机器发送或导出一个作业，计数器递增一，而不是为画布上的每个副本递增。\n"
+"不带名称的 {serial()} 使用名为 \"default\" 的计数器，该计数器在第一个作业后创建。"
+msgstr ""
+"序列号用于计算您雕刻的零件。\n"
+"1. 在下方创建计数器。\n"
+"2. 在文本框中输入 {serial(\"name\")}，或使用字体属性中的插入序列号。\n"
+"3. 每向机器发送或导出一个作业，计数器递增一，而不是为画布上的每个副本递增。\n"
+"不带名称的 {serial()} 使用名为 \"default\" 的计数器，该计数器在第一个作业后创建。"
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "用作 {call}。下一个编号：{number}"

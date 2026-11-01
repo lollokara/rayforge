@@ -98,6 +98,7 @@ msgstr "लंबाई या व्यंजक दर्ज करें."
 
 #: sketcher/core/constraints/vertical.py
 #: sketcher/ui_gtk/tools/vertical_constraint_tool.py
+#: sketcher/ui_gtk/font_properties.py
 msgid "Vertical"
 msgstr "लंबवत"
 
@@ -925,3 +926,225 @@ msgstr "स्केच फ़ाइल अमान्य JSON है: {}"
 #: sketcher/image/importer.py
 msgid "Failed to load sketch structure: {}"
 msgstr "स्केच संरचना लोड करने में विफलता: {}"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Mirror"
+msgstr "मिरर"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Reverse Characters"
+msgstr "अक्षरों को उलटें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Upside Down"
+msgstr "उल्टा"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Rotation"
+msgstr "रोटेशन"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out"
+msgstr "नॉक-आउट"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out Margin"
+msgstr "नॉक-आउट मार्जिन"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Follow Path"
+msgstr "पथ का अनुसरण करें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Side"
+msgstr "पथ पक्ष"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Outside"
+msgstr "बाहर"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Inside"
+msgstr "अंदर"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Alignment"
+msgstr "पथ संरेखण"
+
+#: sketcher/ui_gtk/font_properties.py
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Start"
+msgstr "शुरू करें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Center"
+msgstr "केंद्र"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "End"
+msgstr "अंत"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Offset"
+msgstr "पथ ऑफ़सेट"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bottom Text"
+msgstr "निचला पाठ"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bind the text to the selected shape"
+msgstr "पाठ को चयनित आकार से बांधें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Following a path. Activate to release"
+msgstr "पथ का अनुसरण कर रहा है। छोड़ने के लिए सक्रिय करें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Select the text box together with a line, arc, circle or curve"
+msgstr "टेक्स्ट बॉक्स को एक रेखा, चाप, वृत्त या वक्र के साथ चुनें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Not Installed"
+msgstr "फ़ॉन्ट स्थापित नहीं है"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "A substitute font is used. Install the font or pick another."
+msgstr "एक स्थानापन्न फ़ॉन्ट का उपयोग किया जाता है। फ़ॉन्ट स्थापित करें या दूसरा चुनें।"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Custom Font"
+msgstr "कस्टम फ़ॉन्ट"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font…"
+msgstr "फ़ॉन्ट स्थापित करें…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Remove Custom Font"
+msgstr "कस्टम फ़ॉन्ट हटाएं"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "None"
+msgstr "कोई नहीं"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid "Could not install {name}"
+msgstr "{name} स्थापित नहीं किया जा सका"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Files"
+msgstr "फ़ॉन्ट फ़ाइलें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font"
+msgstr "फ़ॉन्ट स्थापित करें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Preset"
+msgstr "प्रीसेट"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Save as Preset"
+msgstr "प्रीसेट के रूप में सहेजें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Delete Preset"
+msgstr "प्रीसेट हटाएं"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Choose…"
+msgstr "चुनें…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Insert Serial Number"
+msgstr "क्रम संख्या डालें"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Counters are managed in Settings"
+msgstr "काउंटर सेटिंग्स में प्रबंधित होते हैं"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Serial Numbers"
+msgstr "क्रम संख्याएं"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Counters advance once for every job sent to the machine or exported. Use them in a text box with {serial(\"name\")}."
+msgstr "मशीन को भेजे गए या निर्यात किए गए प्रत्येक कार्य के लिए काउंटर एक बार आगे बढ़ते हैं। उन्हें टेक्स्ट बॉक्स में {serial(\"name\")} के साथ उपयोग करें।"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "New Counter Name"
+msgstr "नया काउंटर नाम"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Current Value"
+msgstr "वर्तमान मान"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Step"
+msgstr "चरण"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Zero Padding"
+msgstr "शून्य पैडिंग"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Prefix"
+msgstr "उपसर्ग"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Suffix"
+msgstr "प्रत्यय"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Reset to Start"
+msgstr "प्रारंभ पर रीसेट करें"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Delete Counter"
+msgstr "काउंटर हटाएं"
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"टेक्स्ट में {serial()} जोड़ता है। जब भी कोई कार्य भेजा या निर्यात किया जाता "
+"है, तो संख्या में एक की वृद्धि होती है। काउंटर "
+"सेटिंग्स > क्रम संख्याएं में प्रबंधित किए जाते हैं।"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"अगली संख्या: {numbers}। जब भी कोई कार्य भेजा या निर्यात किया जाता है, तो संख्या "
+"में एक की वृद्धि होती है। काउंटर सेटिंग्स > क्रम संख्याएं में प्रबंधित किए "
+"जाते हैं।"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Create a counter below.\n"
+"2. Type {serial(\"name\")} into a text box, or use Insert Serial Number in "
+"Font Properties.\n"
+"3. The counter goes up by one each time a job is sent to the machine or "
+"exported, not for every copy on the canvas.\n"
+"{serial()} without a name uses the counter called \"default\", which is "
+"created after the first job."
+msgstr ""
+"क्रम संख्याएं आपके उत्कीर्ण भागों की गणना करती हैं।\n"
+"1. नीचे एक काउंटर बनाएं।\n"
+"2. टेक्स्ट बॉक्स में {serial(\"name\")} लिखें, या फ़ॉन्ट गुण में "
+"क्रम संख्या डालें का उपयोग करें।\n"
+"3. मशीन को भेजे गए या निर्यात किए गए प्रत्येक कार्य के लिए काउंटर एक बढ़ता "
+"है, कैनवस पर प्रत्येक प्रति के लिए नहीं।\n"
+"बिना नाम के {serial()} \"default\" नामक काउंटर का उपयोग करता है, जो "
+"पहले कार्य के बाद बनता है।"
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "{call} के रूप में उपयोग करें। अगली संख्या: {number}"

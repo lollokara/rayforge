@@ -2,7 +2,7 @@ import logging
 import math
 from enum import Enum, auto
 from gettext import gettext as _
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import cairo
 from blinker import Signal
@@ -28,6 +28,8 @@ if TYPE_CHECKING:
     from ..sketchcanvas import SketchCanvas
 
 logger = logging.getLogger(__name__)
+
+DYNAMIC_TEXT_COLOR = (0.21, 0.52, 0.89)
 
 
 class TextBoxState(Enum):
@@ -653,7 +655,7 @@ class TextBoxTool(SketchTool):
             return
 
         natural_width, natural_height = entity.get_natural_size(
-            self.text_buffer
+            self.element.sketch.resolve_content(self.text_buffer)
         )
 
         p_origin = self.element.sketch.registry.get_point(entity.origin_id)
@@ -755,6 +757,18 @@ class TextBoxTool(SketchTool):
         if not isinstance(entity, TextBoxEntity):
             return
 
+        # shortcut: caret placement assumes plain left-to-right text
+        # along the width edge, upgrade when transformed text needs
+        # in-place caret positioning
+        if (
+            entity.mirrored
+            or entity.reverse
+            or entity.vertical
+            or entity.rotation
+            or entity.path_entity_id is not None
+        ):
+            return
+
         p_origin = self.element.sketch.registry.get_point(entity.origin_id)
         p_width = self.element.sketch.registry.get_point(entity.width_id)
         p_height = self.element.sketch.registry.get_point(entity.height_id)
@@ -831,7 +845,11 @@ class TextBoxTool(SketchTool):
         if self.live_edit_cmd is not None:
             self.live_edit_cmd.update_cursor(self.cursor_pos)
 
-    def apply_font_change(self, new_font_config: FontConfig) -> bool:
+    def apply_font_change(
+        self,
+        new_font_config: FontConfig,
+        new_style: dict[str, Any] | None = None,
+    ) -> bool:
         """Applies a font change during an active edit session.
 
         The live resize performed while typing mutates point positions and
@@ -861,6 +879,9 @@ class TextBoxTool(SketchTool):
         entity.font_config = new_font_config
         self._edit_cmd.new_font_config = new_font_config
         self._edit_cmd.new_content = self.text_buffer
+        if new_style is not None:
+            entity.set_style(new_style)
+            self._edit_cmd.new_style = new_style
         self._resize_box_to_fit_text()
 
         if self.live_edit_cmd:
@@ -883,40 +904,9 @@ class TextBoxTool(SketchTool):
         if not entity:
             return
 
-        p_origin = self.element.sketch.registry.get_point(entity.origin_id)
-        p_width = self.element.sketch.registry.get_point(entity.width_id)
-        p_height = self.element.sketch.registry.get_point(entity.height_id)
-
-        natural_geo = text_to_geometry(
-            self.text_buffer, font_config=entity.font_config
-        )
-
-        _, nat_min_y, _, nat_max_y = natural_geo.rect()
-
-        # Handle empty text case for frame mapping logic
-        if not self.text_buffer:
-            nat_min_y = 0.0
-            nat_max_y = entity.font_config.size
-
-        advance_width = (
-            entity.font_config.get_text_width(self.text_buffer)
-            if self.text_buffer
-            else 10.0
-        )
-
-        transformed_geo = natural_geo.map_to_frame(
-            (p_origin.x, p_origin.y),
-            (p_width.x, p_width.y),
-            (p_height.x, p_height.y),
-            anchor_x=0.0,
-            stable_src_width=advance_width,
-            anchor_y=nat_min_y,
-            stable_src_height=nat_max_y - nat_min_y,
-        )
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                "Transformed text geometry: %s", transformed_geo.rect()
-            )
+        sketch = self.element.sketch
+        segments = sketch.resolve_content_segments(self.text_buffer)
+        resolved = "".join(text for text, _ in segments)
 
         ctx.save()
         model_to_screen_matrix = (
@@ -925,9 +915,51 @@ class TextBoxTool(SketchTool):
         cairo_mat = cairo.Matrix(*model_to_screen_matrix.for_cairo())
         ctx.transform(cairo_mat)
 
-        geometry_to_cairo(transformed_geo, ctx)
-        self._set_text_color(ctx, entity)
+        if resolved:
+            geometry_to_cairo(
+                entity.to_geometry(sketch.registry, resolved_content=resolved),
+                ctx,
+            )
+            self._set_text_color(ctx, entity)
+            ctx.fill()
+            self._draw_dynamic_text(ctx, entity, segments)
+
+        if entity.is_plain_layout() and resolved == self.text_buffer:
+            self._draw_caret_and_selection(ctx, entity)
+
+        ctx.restore()
+
+    def _draw_dynamic_text(
+        self,
+        ctx: cairo.Context,
+        entity: TextBoxEntity,
+        segments: list[tuple[str, bool]],
+    ) -> None:
+        dynamic_geo = entity.to_dynamic_geometry(
+            self.element.sketch.registry, segments
+        )
+        if dynamic_geo.is_empty():
+            return
+        geometry_to_cairo(dynamic_geo, ctx)
+        ctx.set_source_rgb(*DYNAMIC_TEXT_COLOR)
         ctx.fill()
+
+    def _draw_caret_and_selection(
+        self, ctx: cairo.Context, entity: TextBoxEntity
+    ) -> None:
+        p_origin = self.element.sketch.registry.get_point(entity.origin_id)
+        p_width = self.element.sketch.registry.get_point(entity.width_id)
+        p_height = self.element.sketch.registry.get_point(entity.height_id)
+
+        if self.text_buffer:
+            natural_geo = text_to_geometry(
+                self.text_buffer, font_config=entity.font_config
+            )
+            _, nat_min_y, _, nat_max_y = natural_geo.rect()
+            advance_width = entity.font_config.get_text_width(self.text_buffer)
+        else:
+            advance_width, nat_max_y = entity.placeholder_size()
+            nat_min_y = 0.0
 
         start, end = self._get_selection_range()
         if start != end:
@@ -954,7 +986,7 @@ class TextBoxTool(SketchTool):
 
             cursor_height = nat_max_y - nat_min_y
             if cursor_height <= 0:
-                cursor_height = entity.font_config.size
+                cursor_height = entity.placeholder_size()[1]
 
             c_center_y = (nat_min_y + nat_max_y) / 2
 
@@ -994,8 +1026,6 @@ class TextBoxTool(SketchTool):
             ctx.close_path()
             self._set_text_color(ctx, entity)
             ctx.fill()
-
-        ctx.restore()
 
     def _set_text_color(
         self, ctx: cairo.Context, entity: TextBoxEntity

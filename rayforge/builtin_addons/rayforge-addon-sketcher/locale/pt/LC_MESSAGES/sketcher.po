@@ -98,6 +98,7 @@ msgstr "Insira o comprimento ou uma expressão."
 
 #: sketcher/core/constraints/vertical.py
 #: sketcher/ui_gtk/tools/vertical_constraint_tool.py
+#: sketcher/ui_gtk/font_properties.py
 msgid "Vertical"
 msgstr "Vertical"
 
@@ -925,3 +926,225 @@ msgstr "O arquivo de esboço é JSON inválido: {}"
 #: sketcher/image/importer.py
 msgid "Failed to load sketch structure: {}"
 msgstr "Falha ao carregar a estrutura do esboço: {}"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Mirror"
+msgstr "Espelhar"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Reverse Characters"
+msgstr "Inverter caracteres"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Upside Down"
+msgstr "De cabeça para baixo"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Rotation"
+msgstr "Rotação"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out"
+msgstr "Knock-out"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Knock-out Margin"
+msgstr "Margem de knock-out"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Follow Path"
+msgstr "Seguir caminho"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Side"
+msgstr "Lado do caminho"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Outside"
+msgstr "Externo"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Inside"
+msgstr "Interno"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Alignment"
+msgstr "Alinhamento do caminho"
+
+#: sketcher/ui_gtk/font_properties.py
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Start"
+msgstr "Iniciar"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Center"
+msgstr "Centro"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "End"
+msgstr "Fim"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Path Offset"
+msgstr "Deslocamento do caminho"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bottom Text"
+msgstr "Texto inferior"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Bind the text to the selected shape"
+msgstr "Vincular o texto à forma selecionada"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Following a path. Activate to release"
+msgstr "Seguindo um caminho. Ative para soltar"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Select the text box together with a line, arc, circle or curve"
+msgstr "Selecione a caixa de texto junto com uma linha, arco, círculo ou curva"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Not Installed"
+msgstr "Fonte não instalada"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "A substitute font is used. Install the font or pick another."
+msgstr "Uma fonte substituta está sendo usada. Instale a fonte ou escolha outra."
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Custom Font"
+msgstr "Fonte personalizada"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font…"
+msgstr "Instalar fonte…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Remove Custom Font"
+msgstr "Remover fonte personalizada"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "None"
+msgstr "Nenhum"
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid "Could not install {name}"
+msgstr "Não foi possível instalar {name}"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Font Files"
+msgstr "Arquivos de fontes"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Install Font"
+msgstr "Instalar fonte"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Preset"
+msgstr "Predefinição"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Save as Preset"
+msgstr "Salvar como predefinição"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Delete Preset"
+msgstr "Excluir predefinição"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Choose…"
+msgstr "Escolher…"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Insert Serial Number"
+msgstr "Inserir número de série"
+
+#: sketcher/ui_gtk/font_properties.py
+msgid "Counters are managed in Settings"
+msgstr "Os contadores são gerenciados nas Configurações"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Serial Numbers"
+msgstr "Números de série"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Counters advance once for every job sent to the machine or exported. Use them in a text box with {serial(\"name\")}."
+msgstr "Os contadores avançam uma vez para cada trabalho enviado à máquina ou exportado. Use-os em uma caixa de texto com {serial(\"name\")}."
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "New Counter Name"
+msgstr "Nome do novo contador"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Current Value"
+msgstr "Valor atual"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Step"
+msgstr "Passo"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Zero Padding"
+msgstr "Preenchimento com zeros"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Prefix"
+msgstr "Prefixo"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Suffix"
+msgstr "Sufixo"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Reset to Start"
+msgstr "Redefinir para o início"
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid "Delete Counter"
+msgstr "Excluir contador"
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Adds {serial()} to the text. The number goes up by one each time a job is "
+"sent or exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Adiciona {serial()} ao texto. O número aumenta em um a cada trabalho enviado "
+"ou exportado. Os contadores são gerenciados em "
+"Configurações > Números de série."
+
+#: sketcher/ui_gtk/font_properties.py
+#, python-brace-format
+msgid ""
+"Next number: {numbers}. It goes up by one each time a job is sent or "
+"exported. Counters are managed in Settings > Serial Numbers."
+msgstr ""
+"Próximo número: {numbers}. Aumenta em um a cada trabalho enviado ou "
+"exportado. Os contadores são gerenciados em "
+"Configurações > Números de série."
+
+#: sketcher/ui_gtk/serial_settings.py
+msgid ""
+"Serial numbers count your engraved parts.\n"
+"1. Create a counter below.\n"
+"2. Type {serial(\"name\")} into a text box, or use Insert Serial Number in "
+"Font Properties.\n"
+"3. The counter goes up by one each time a job is sent to the machine or "
+"exported, not for every copy on the canvas.\n"
+"{serial()} without a name uses the counter called \"default\", which is "
+"created after the first job."
+msgstr ""
+"Os números de série contam as suas peças gravadas.\n"
+"1. Crie um contador abaixo.\n"
+"2. Digite {serial(\"name\")} em uma caixa de texto ou use "
+"Inserir número de série em Propriedades da Fonte.\n"
+"3. O contador aumenta em um a cada trabalho enviado para a máquina ou "
+"exportado, e não para cada cópia na área de trabalho.\n"
+"{serial()} sem nome usa o contador chamado \"default\", que é criado "
+"após o primeiro trabalho."
+
+#: sketcher/ui_gtk/serial_settings.py
+#, python-brace-format
+msgid "Use as {call}. Next number: {number}"
+msgstr "Usar como {call}. Próximo número: {number}"

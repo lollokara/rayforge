@@ -86,6 +86,12 @@ class MachineCmd:
         if self._on_progress_callback:
             self._scheduler(self._on_progress_callback, metrics)
 
+    def _notify_job_dispatched(self, kind: str) -> None:
+        """Tells addons that a job was handed off successfully."""
+        get_context().plugin_mgr.hook.job_dispatched(
+            doc=self._editor.doc, kind=kind
+        )
+
     async def _execute_monitored_job(
         self,
         ops: Ops,
@@ -337,6 +343,7 @@ class MachineCmd:
         artifact: JobArtifact,
         machine: Machine,
         on_progress: Callable[[dict], None] | None,
+        notify_dispatch: bool = True,
     ):
         """The specific machine action for a send job.
 
@@ -348,6 +355,7 @@ class MachineCmd:
         if not isinstance(artifact, JobArtifact):
             raise TypeError("_run_send_action received a non-JobArtifact")
 
+        machine.driver.job_failed = False
         await self._execute_monitored_job(
             artifact.ops,
             machine,
@@ -355,6 +363,12 @@ class MachineCmd:
             encoded=artifact.encoded_output,
             kind=JobKind.SEND,
         )
+        if (
+            notify_dispatch
+            and not artifact.ops.is_empty()
+            and machine.driver.job_failed is not True
+        ):
+            self._scheduler(self._notify_job_dispatched, "send")
 
     async def _start_job(
         self,
@@ -479,7 +493,12 @@ class MachineCmd:
         try:
             await self._start_job(
                 machine,
-                final_job_action=self._run_send_action,
+                final_job_action=partial(
+                    self._run_send_action,
+                    notify_dispatch=not (
+                        pointer_dry_run and machine.has_pointer_offset()
+                    ),
+                ),
                 on_progress=on_progress,
                 pointer_dry_run=pointer_dry_run,
             )
@@ -518,6 +537,7 @@ class MachineCmd:
     def cancel_job(self, machine: Machine):
         """Adds a task to cancel the currently running job on the machine."""
         driver = machine.driver
+        driver.job_failed = True
         self._editor.task_manager.add_coroutine(
             lambda ctx: driver.cancel(), key="cancel-job"
         )

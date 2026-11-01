@@ -5,8 +5,10 @@ import pytest
 from raygeo.geo import Matrix
 from raygeo.ops.state import CoolantMode
 
+from rayforge.context import get_context
 from rayforge.core.doc import Doc
 from rayforge.core.group import Group
+from rayforge.core.hooks import hookimpl
 from rayforge.core.layer import Layer
 from rayforge.core.source_asset import SourceAsset
 from rayforge.core.step import Step
@@ -43,6 +45,7 @@ from rayforge.machine.models.coordspace import (
 )
 from rayforge.machine.models.machine import Machine
 from rayforge.machine.models.spindle import SpindleHead
+from rayforge.pipeline.artifact import JobArtifact
 from rayforge.shared.tasker.manager import TaskManager
 
 
@@ -787,6 +790,62 @@ class TestExportGcodeToPath:
             file_cmd.export_gcode_to_path(export_path)
 
             assert not export_path.exists()
+
+    def _export(self, file_cmd, export_path, machine_code):
+        artifact = MagicMock(spec=JobArtifact)
+        artifact.machine_code = machine_code
+        store = file_cmd._editor.pipeline.artifact_store
+        with (
+            patch.object(
+                file_cmd._editor.pipeline, "generate_job_artifact"
+            ) as mock_generate,
+            patch.object(store, "checkout_handle") as mock_checkout,
+        ):
+            mock_checkout.return_value.__enter__.return_value = artifact
+            mock_generate.side_effect = lambda when_done: when_done(
+                MagicMock(), None
+            )
+            file_cmd.export_gcode_to_path(export_path)
+
+    def test_export_gcode_dispatches_job(self, file_cmd, tmp_path):
+        """A successful export fires job_dispatched once."""
+        calls = []
+
+        class Recorder:
+            @hookimpl
+            def job_dispatched(self, doc, kind):
+                calls.append((doc, kind))
+
+        recorder = Recorder()
+        plugin_mgr = get_context().plugin_mgr
+        plugin_mgr.register(recorder)
+        try:
+            self._export(file_cmd, tmp_path / "out.gcode", "G0 X0\n")
+        finally:
+            plugin_mgr.unregister(recorder)
+
+        assert (tmp_path / "out.gcode").read_text() == "G0 X0\n"
+        assert calls == [(file_cmd._editor.doc, "export")]
+
+    def test_failed_export_does_not_dispatch_job(self, file_cmd, tmp_path):
+        """An export without G-code data fires nothing."""
+        calls = []
+
+        class Recorder:
+            @hookimpl
+            def job_dispatched(self, doc, kind):
+                calls.append(kind)
+
+        recorder = Recorder()
+        plugin_mgr = get_context().plugin_mgr
+        plugin_mgr.register(recorder)
+        try:
+            self._export(file_cmd, tmp_path / "out.gcode", None)
+        finally:
+            plugin_mgr.unregister(recorder)
+
+        assert calls == []
+        assert not (tmp_path / "out.gcode").exists()
 
 
 class TestGetImporterInfo:

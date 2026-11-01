@@ -175,6 +175,19 @@ def on_job_resumed(status):
 @hookimpl
 def on_job_finished(status, outcome, message=""):
     subprocess.Popen(["/usr/local/bin/notify-ha", outcome.name.lower()])
+
+### `job_dispatched(doc, kind)`
+
+कोई कार्य सफलतापूर्वक सौंपे जाने के बाद मुख्य थ्रेड पर कॉल किया जाता है. जब मशीन ने कोई भेजा गया
+कार्य चलाया हो तो `kind` `"send"` होता है और जब G-कोड किसी फ़ाइल में लिखा गया हो तो `"export"` होता
+है. फ़्रेमिंग, पॉइंटर ड्राई रन, विफल या खाली कार्य, स्वच्छता जाँच और पूर्वावलोकन इसे कॉल नहीं करते
+हैं. इसका उपयोग किसी भी ऐसी चीज़ के लिए करें जो उत्पादित प्रति भाग एक बार होनी चाहिए, जैसे काउंटर
+आगे बढ़ाना.
+
+```python
+@hookimpl
+def job_dispatched(doc, kind):
+    logger.info(f"Job dispatched ({kind}) with {len(doc.all_workpieces)} items")
 ```
 
 ## पंजीकरण हुक
@@ -390,6 +403,10 @@ def transformer_settings_loaded(dialog, step, transformer):
 
 **संस्करण 24** ने जॉब मॉनिटरिंग हुक `on_job_started`, `on_job_updated`, `on_job_paused`,
 `on_job_resumed`, और `on_job_finished`, साथ ही `Machine.current_job` पोलिंग API जोड़ी.
+
+वर्तमान API संस्करण 22 है. हाल के संस्करणों में क्या बदला:
+
+**संस्करण 22** ने `job_dispatched` जोड़ा.
 
 **संस्करण 9** ने `main_window_ready`, `register_exporters`, `register_importers`, और
 `register_renderers` जोड़े.

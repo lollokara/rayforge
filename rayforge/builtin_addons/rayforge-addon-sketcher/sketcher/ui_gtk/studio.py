@@ -12,10 +12,9 @@ from rayforge.ui_gtk.shared.status_bar import StatusBar
 from rayforge.ui_gtk.shared.undo_button import RedoButton, UndoButton
 from rayforge.ui_gtk.varset.varset_editor import VarSetEditorWidget
 
-from ..core.entities.text_box import TextBoxEntity
 from ..core.sketch import DEFAULT_FILL_COLOR, Sketch
 from .conflicts_widget import ConflictingConstraintsWidget
-from .font_properties import FontPropertiesWidget
+from .font_properties import FontPropertiesWidget, split_text_selection
 from .menu import SketchMenu
 from .sketchcanvas import SketchCanvas
 from .tools import ACTION_TOOL_MAP
@@ -503,16 +502,12 @@ class SketchStudio(Gtk.Box):
             self._update_status_bar()
             return
 
-        text_entity_id = None
-        if len(selection.entity_ids) == 1:
-            entity_id = selection.entity_ids[0]
-            entity = self.canvas.sketch_element.sketch.registry.get_entity(
-                entity_id
-            )
-            if isinstance(entity, TextBoxEntity):
-                text_entity_id = entity_id
+        text_entity_id, path_candidate_id = split_text_selection(
+            self.canvas.sketch_element.sketch.registry,
+            selection.entity_ids,
+        )
 
-        self.font_properties.set_text_entity(text_entity_id)
+        self.font_properties.set_text_entity(text_entity_id, path_candidate_id)
         self._update_status_bar()
 
     def _on_tool_changed(self, sender, tool_name: str):

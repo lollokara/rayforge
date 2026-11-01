@@ -111,27 +111,33 @@ Funktionen bereit, und es können benutzerdefinierte Funktionen für sie registr
 
 ### Eingebaute Vorlagenfunktionen
 
-| Funktion        | Rückgabetyp | Beschreibung                                     |
-| --------------- | ----------- | ------------------------------------------------ |
-| `{today()}`     | `date`      | Aktuelles UTC-Datum (z.B. `2026-08-26`)          |
-| `{date()}`      | `date`      | Alias für `today()`                              |
-| `{now()}`       | `datetime`  | Aktuelles UTC-Datum und Uhrzeit                  |
-| `{time()}`      | `time`      | Aktuelle UTC-Zeit (z.B. `15:30:00.123456+00:00`) |
-| `{timestamp()}` | `float`     | Unix-Zeitstempel (Sekunden seit Epoche)          |
-| `{uuid4()}`     | `str`       | 8-stelliger Hex-String (z.B. `a1b2c3d4`)         |
-| `{uuid8()}`     | `str`       | Alias für `uuid4()`                              |
-| `{uuid()}`      | `str`       | Vollständiger UUID v4-String (36 Zeichen)        |
+| Funktion        | Rückgabetyp | Beschreibung                                                           |
+| --------------- | ----------- | ---------------------------------------------------------------------- |
+| `{today()}`     | `date`      | Aktuelles UTC-Datum (z.B. `2026-08-26`)                                |
+| `{date()}`      | `date`      | Alias für `today()`                                                    |
+| `{now()}`       | `datetime`  | Aktuelles UTC-Datum und Uhrzeit                                        |
+| `{time()}`      | `time`      | Aktuelle UTC-Zeit (z.B. `15:30:00.123456+00:00`)                       |
+| `{timestamp()}` | `float`     | Unix-Zeitstempel (Sekunden seit Epoche)                                |
+| `{uuid4()}`     | `str`       | 8-stelliger Hex-String (z.B. `a1b2c3d4`)                               |
+| `{uuid8()}`     | `str`       | Alias für `uuid4()`                                                    |
+| `{uuid()}`      | `str`       | Vollständiger UUID v4-String (36 Zeichen)                              |
+| `{serial()}`    | `str`       | Aktueller Wert eines Serienzählers; `{serial("name")}` wählt einen aus |
 
 Typische Anwendungen sind eindeutige Seriennummern pro Lösung (`Part # {uuid4()}`), live
 Maßbeschriftungen (`W={width:.1f} H={height:.1f}`), Datumsstempel (`Date: {today()}`),
 Produktionszähler (`{name} - {count:.0f}pcs`) oder Unix-Zeitstempel für die
 Produktionsprotokollierung (`{timestamp():.0f}`).
 
+`serial()` liest einen persistenten Zähler, der für jeden gesendeten oder exportierten Auftrag um
+eins weiterzählt, sodass jedes Teil die nächste Nummer erhält. Siehe
+[Seriennummern](text-box.md#serial-numbers).
+
 ## Benutzerdefinierte Vorlagenfunktionen {#custom-template-functions}
 
 Du kannst eigene Funktionen registrieren, um sie in Textfeldvorlagen zu verwenden. Dies ist nützlich
 zum Abrufen von Seriennummern aus einer Datenbank, zum Lesen externer Daten oder zum Erstellen
-benutzerdefinierter Beschriftungen.
+benutzerdefinierter Beschriftungen. Für eine einfache fortlaufende Nummer benötigst du kein Skript:
+Verwende die eingebaute Funktion `serial()`.
 
 ### Das Registrierungsskript schreiben
 
