@@ -90,5 +90,20 @@ app = BUNDLE(
             'Rayforge uses the camera to capture your work surface, '
             'so it can align your design with the material.'
         ),
+        # Without these keys macOS 15+ never offers the Local Network
+        # permission: connections to LAN addresses fail with "No route
+        # to host" and the app is missing from System Settings, so it
+        # cannot be allowed. The Bonjour types must stay in sync with
+        # the mDNS discovery in rayforge/machine (driver ``services``
+        # and rayforge/machine/discovery/mdns_channel.py).
+        'NSLocalNetworkUsageDescription': (
+            'Rayforge connects to laser controllers and print servers '
+            'on your local network.'
+        ),
+        'NSBonjourServices': [
+            '_esp3d._tcp',
+            '_http._tcp',
+            '_octoprint._tcp',
+        ],
     },
 )
